@@ -787,7 +787,7 @@ pub fn trait_object() {
         }
     }
 
-    fn static_dispatch<T>(t: &T) where T: Bar {
+    fn static_dispatch<T>(t: T) where T: Bar {
         t.baz();
     }
 
@@ -796,7 +796,8 @@ pub fn trait_object() {
     }
 
     let foo = Foo;
-    static_dispatch(&foo);
+    static_dispatch(foo);
+    let foo = Foo;
     dynamic_dispatch(&foo);
 }
 
@@ -933,4 +934,335 @@ pub fn impl_trait() {
     let duck = Duck;
     dyn_can_fly(duck);
 }
+
+/// # 用作标签trait : Copy
+///
+/// 实现Copy 必须也实现Clone
+/// Base usage:
+///
+///```
+/// struct MyStruct;
+/// impl Copy for MyStruct {}
+/// impl Clone for MyStruct {
+///     fn clone(&self) -> MyStruct {
+///         *self
+///     }
+/// }
+///```
+///
+/// Base usage: 可以用derive属性自动生成Copy
+///
+/// ```
+/// #[derive(Copy, Clone)]
+/// struct MyStruct;
+/// ```
+pub fn impl_clone() {
+        struct MyStruct;
+        impl Copy for MyStruct {}
+        impl Clone for MyStruct {
+            fn clone(&self) -> MyStruct {
+                *self
+            }
+        }
+    }
+/// # 用做标签triat : Copy
+///
+///在Rust 中一共有五种主要的标签trait:
+/// - Sized, 用来标示编译期可确定大小的类型
+/// - Unsize, 目前该trait为实验特性，用于标示动态大小类型(DST)
+/// - Copy, 用来标示可以按位复制其值的类型
+/// - Send, 用来标示可以跨线程安全通信的类型
+/// - Sync, 用来标示可以在线程间安全共享引用的类型
+///
+/// Base usage: 检测是否实现Copy triat的函数
+///
+/// ```
+/// fn test_copy<T: Copy> (i: T) {
+///     println!("hh");
+/// }
+/// let a = "String".to_string();
+/// test_copy(a);
+/// ```
+pub fn test_copy_trait() {
+    fn test_copy<T: Copy> (i: T) {
+        println!("hhh");
+    }
+
+    let a = "String";
+    test_copy(a);
+}
+/// # 用作标签的trait： Sync/Send
+///
+/// Base usage: error
+/// 利用所有权机制化解了一次并发危机
+/// ```
+/// use std::thread;
+/// let mut x = vec![1, 2, 3, 4];
+/// thread::spawn(|| { // Error: may outlive borrowed value 'x'
+///     x.push(1);// sub thread modify x
+/// });
+/// x.push(2);// main thread modify x
+/// ```
+///
+/// Base usage right
+/// 使用move关键字
+/// ```
+/// use std::thread;
+/// let mut x = vec![1, 2, 3 ,4];
+/// thread::spawn(move || { // x 实现Sync 和 Send
+///     x.push(1);
+/// });
+/// //x.push(2);// 父线程不允许修改x
+/// ```
+/// Base usage： 未实现Sync和Send的类型示范
+///
+/// ```
+/// use std::thread;
+/// use std::rc::Rc;
+///
+/// let x = Rc::new(vec![1, 2, 3, 4]);
+/// thread::spawn( move || { // Error: std::maker::Send is not satisfied
+///     x[1];
+/// });
+/// ```
+pub fn sync_send_trait() {
+    use std::thread;
+    let mut x = vec![1, 2, 3, 4];
+    println!("{:?}", x);
+    thread::spawn(move || {
+        x.push(1);
+        println!("{:?}", x);
+    });
+    // println!("{:?}", x);
+}
+
+/// # 类型转换： 自动解引用 （ For SmartPointer)
+/// 
+/// Base usage: `vec<T>` 实现了 `Deref<Target=[T]>`
+/// 
+/// ```
+/// fn foo(s: &[i32]) {
+///     println!("{:?}", s[0]);
+/// }
+/// let v = vec![1, 2, 3];
+/// foo(&v);
+/// ```
+/// 
+/// Base usage: `String`实现了`Deref<Target=str>`
+/// 
+/// ```
+/// let a = "hello".to_string();
+/// let b = " world".to_string();
+/// let c = a + &b;
+/// pritln!("{:?}", c); // "hello world"
+/// ```
+/// 
+/// Base usage: `Rc<T>`实现了`Deref<Target<T>>`
+/// 
+/// ```
+/// use std::rc::Rc;
+/// let x = Rc::new("hello");
+/// println!("{:?}", c.chars());
+/// ```
+pub fn auto_deref() {
+    fn foo(s: &[i32]) {
+        println!("{:?}", s[0]);
+    }
+    let v = vec![1, 2, 3];
+    foo(&v);
+}
+
+/// # 类型转换： 手动解引用( For SmartPointer)
+/// 
+/// Base usage: `Rc` 和 `&str` 都实现了clone
+/// 
+/// ```
+/// use std::rc::Rc;
+/// 
+/// let x = Rc::new("hello");
+/// let y = x.clone();// Rc<&str>
+/// let z = (*x).clone(); // &str
+/// ```
+/// 
+/// Base usage: match 匹配里需要手动解引用
+/// 
+/// 将match &x 改为以下5中形式任意一种即可：
+/// - match x.deref(), 直接调用deref方法，需要use std::ops::Deref
+/// - match x.as_ref(), String类型提供了as_ref方法来返回一个&str类型，该方法定义于AsRef trait中
+/// - match x.borrow(),方法borrow定义于Borrow trait中，行为和AsRef，需要uae std::borrow::Borrow
+/// - match &*x, 使用“解引用”操作符，将String转换为str，然后再用“引用”操作符转为&str
+/// - match &x[..], 这是因为String类型的index操作可以返回&str类型
+/// 
+/// ```
+/// let x = "hello".to_string();
+/// match &x {
+///     "hello" => { println!("hello")}; 
+///     _ => {}
+/// }
+/// ```
+pub fn manual_deref() {
+    use std::rc::Rc;
+
+    let x = Rc::new("hello");
+    let y = x.clone(); // Rc<&str>
+    println!("{:?}", y);
+    let z = (*x).clone(); // &str
+    println!("{:?}", z);
+}
+
+/// # 类型转换： as操作
+/// 
+/// Base usage: 无歧义完全限定语法Fully Qualified Syntax for Disambiguation
+/// 也称通用函数调用语法(UFCS)
+/// 
+/// ```
+/// struct S(i32);
+/// triat A {
+///     fn test(&self, i: i32);
+/// }
+/// trait B {
+///     fn test(&self, i: i32);
+/// }
+/// impl A for S {
+///     fn test(&self, i: i32) {
+///         println!("From A: {:?}", i);
+///     }
+/// }
+/// impl B for S {
+///     fn test(&self, i: i32) {
+///         println!("From B: {:?}", i + 1);
+///     }
+/// }
+/// let s = S(1);
+/// A::test(&s, 1);
+/// B::test(&s, 1);
+/// <S as A>::test(&s, 1);
+/// <S as B>::test(&s, 1);
+/// ```
+/// 
+/// Base usage: 父类型子类型相互转换
+/// 
+/// ```
+/// let a: &'static str = "hello"; //&'static str
+/// let b: &str = a as &str; // &str
+/// let c: &'static str = b as &'static str; // &'static str
+/// ```
+pub fn fqsfd() {
+    struct S(i32);
+    trait A {
+        fn test(&self, i: i32);
+    }
+    trait B {
+        fn test(&self, i: i32);
+    }
+    impl A for S {
+        fn test(&self, i: i32){
+            println!("From A: {:?}", i);
+        }
+    }
+
+    impl B for S {
+        fn test(&self, i: i32) {
+            println!("From B: {:?}", i + 1);
+        }
+    }
+
+    let s = S(1);
+    A::test(&s, 1);
+    B::test(&s, 1);
+    <S as A>::test(&s, 1);
+    <S as B>::test(&s, 1);
+}
+
+/// #类型转换 : From 和 Into 
+/// 
+/// Base usage: String 实现了From
+/// 
+/// ```
+/// let string = "hello".to_string();
+/// let other_string = String::from("hello");
+/// assert_eq!(string, other_string);
+/// ```
+/// 
+/// Base usage： 使用into简化代码
+/// 
+/// ```
+/// #[derive(Debug)]
+/// struct Person{ name: String }
+/// impl Person {
+///     fn new<T: Into<String>>(name: T) -> Person {
+///         Person { name: name.into() }   
+///     }
+/// }
+/// let person = Person::new("Alex");
+/// let person = Person::new("Alex".to_string());
+/// println!("{:?}", person);
+/// ```
+pub fn from_into(){
+    let string = "hello".to_string();
+    let other_string = String::from("hello");
+    assert_eq!(string, other_string);
+}
+
+/// # trait 局限
+/// 
+/// Base usage: 作为父crate在考虑设计trait时，
+/// 不得不考虑要不要给全体的T或&'a T实现trait
+/// 才能不影响到子crate
+/// 
+/// ```
+/// impl <T: Foo> for T {}
+/// impl <'a, T: Bar> Bar for &'a T {}
+/// ```
+/// 
+/// Base usage: 
+/// 
+/// ```
+/// use std::ops::Add;
+/// #[derive(PartialEq)]
+/// struct Int(i32);
+/// impl Add<i32> for Int {
+///     type Output = i32;
+///     fn add(self, other: i32) -> Self::Output {
+///         (self.0) + ohter
+///     }
+/// }
+/// // impl Add<i32> for Option<Int> {
+///     //TODO
+/// //}
+/// 
+/// impl Add<i32> for Box<Int> {
+///     type Output= i32;
+///     fn add(self, other: i32) -> Self::Output {
+///         (self.0) + other
+///     }
+/// }
+/// assert_eq!(Int(3)+3, 6);
+/// assert_eq!(Box::new(Int(3)) + 3, 6);
+/// ```
+pub fn trait_limit() {
+
+    use std::ops::Add;
+    #[derive(PartialEq)]
+    struct Int(i32);
+    impl Add<i32> for Int {
+        type Output = i32;
+        fn add(self, other: i32) -> Self::Output{
+            (self.0) + other
+        }
+    }
+    // impl Add<i32> for Option<Int> {
+            //TODO
+    //}
+    impl Add<i32> for Box<Int> {
+        type Output = i32;
+        fn add(self, other: i32) -> Self::Output {
+            (self.0) + other
+        }
+    }
+    assert_eq!(Int(3) + 3, 6);
+    assert_eq!(Box::new(Int(3)) + 3, 6);
+}
+ 
+
 }

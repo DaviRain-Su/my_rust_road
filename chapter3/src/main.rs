@@ -20,6 +20,15 @@ fn main() {
     // chapter3::davirain::string_add();
     // chapter3::davirain::trait_inherit();
     // chapter3::davirain::trait_bound(); 
-    chapter3::davirain::trait_object();
-    chapter3::davirain::impl_trait();
+    // chapter3::davirain::trait_object();
+    // chapter3::davirain::impl_trait();
+    // chapter3::davirain::impl_clone();
+    // chapter3::davirain::test_copy_trait();
+    // chapter3::davirain::sync_send_trait();
+    // chapter3::davirain::operate_def();
+    // chapter3::davirain::auto_deref();
+    // chapter3::davirain::manual_deref();
+    // chapter3::davirain::fqsfd();
+    // chapter3::davirain::from_into();
+    chapter3::davirain::trait_limit();
 }
