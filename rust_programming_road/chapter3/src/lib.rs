@@ -838,7 +838,7 @@ pub fn trait_object() {
 ///     }
 ///     s
 /// }
-/// fn dyn_can_fly(s: impl Fly+Debug+'static) -> Box<dyn FLy> {
+/// fn dyn_can_fly(s: impl Fly+Debug+'static) -> Box<dyn Fly> {
 ///     if s.fly() {
 ///         println!("{:?} can fly", s);
 ///     } else {
