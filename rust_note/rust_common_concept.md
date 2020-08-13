@@ -11,7 +11,7 @@
 
 刚刚上面的`let variable : i32;`这个是声明，而没有给变量赋值，这个在别的语言中可能是行的通的但是在rust中，编译器直接报错（如果在后面使用这个为赋值（定义）的变量）。
 
-`
+```
 let variable: i32;
 println!("variable  = {}", variable); // error[E0381]: use of possibly unintialized 'variable'
-`
+```
