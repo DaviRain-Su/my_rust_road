@@ -33,7 +33,7 @@ pub fn str_compose() {
 /// 
 /// ```
 ///  //Error: `[u32]` does not have a constant size know at compile-time
-/// fn reset(mut arr: [u32]){
+/// fn reset(mut arr: [u32; 5]){
 ///     arr[0] = 5;
 ///     arr[1] = 4;
 ///     arr[2] = 3;
@@ -42,7 +42,7 @@ pub fn str_compose() {
 ///     println!("reset arr {:?}", arr);
 /// }
 /// 
-/// let arr: [u32] = [1, 2, 3, 4, 5];
+/// let arr: [u32; 5] = [1, 2, 3, 4, 5];
 /// reset(arr);
 /// println!("origin arr {:?}", arr);
 /// ```
@@ -155,7 +155,7 @@ pub fn zero_size() {
 /// Base  usage: 利用单元类型查看值的类型
 /// 
 /// ```
-/// let v: () = vec![(); 10]; 
+/// let v: Vec<()> = vec![(); 10];
 /// // Error: expected(), found struct 'std::vec::Vec'
 /// ```
 /// 
@@ -497,7 +497,7 @@ pub fn associated_type() {
 /// 
 /// ```
 /// fn generics_trait() {
-///     trait Add<RHS, Output> {
+///     pub trait Add<RHS, Output> {
 ///         fn my_add(self, rhs: RHS) -> Output;
 ///     }
 ///     impl Add<i32, i32> for i32 {
@@ -580,7 +580,7 @@ pub fn string_add() {
 /// impl Add<u64> for u32 {
 ///     type Output = u64;
 ///     fn add(self, other: u64) -> Self::Output {
-///         （self as u64 ) + other 
+///         （self as u64) + other
 ///     }
 /// }
 /// let a = 1u32;

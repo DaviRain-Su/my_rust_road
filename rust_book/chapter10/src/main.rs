@@ -10,4 +10,5 @@ fn main() {
     let y_ptr = &mut x as *mut String;
     println!("Address is {:p}", x_ptr);
     println!("Address is {:p}", y_ptr);
+    chapter10::generics_type::generics_strcuct();
 }

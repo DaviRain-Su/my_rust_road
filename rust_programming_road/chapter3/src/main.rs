@@ -36,6 +36,7 @@ fn main() {
     // use_and_then();
     // use_map();
     // chapter3::davirain::trait_special();
+    trait_object_dyn();
 }
 
 
