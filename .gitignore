@@ -3,3 +3,8 @@ target
 .dist
 .DS_Store
 a.out
+.vscode
+
+#Added by cargo
+
+/target
