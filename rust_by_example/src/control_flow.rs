@@ -400,8 +400,8 @@ pub fn match_bounding_example() {
 
     match age() {
         0 => println!("I'm not born yet I guess"),
-        n @ 1 ... 12 => println!("I'm a child of age {:?}", n),
-        n @ 13 .. 19 => println!("I'm a teen of age {:?}", n),
+        n @ 1 ..= 12 => println!("I'm a child of age {:?}", n),
+        n @ 13 ..= 19 => println!("I'm a teen of age {:?}", n),
         n => println!("I'm an old person of age {:?}", n),
     }
 
@@ -471,9 +471,9 @@ pub fn lf_let_example() {
 
     if let Foo::Bar = a {
         println!("a is foobar");
-    } else if Foo::Bar = b {
+    } else if let Foo::Baz = b {
         println!("b is foobar");
-    } else if Foo::Qux(value) = c {
+    } else if let Foo::Qux(value) = c {
         println!("c is {}", value);
     }
 
@@ -484,11 +484,11 @@ pub fn lf_let_example() {
 
     enum Boo { Bar }
 
-    let a = Boo::Bar;
+    let _a = Boo::Bar;
 
-    if let Boo::Bar = a {
-        println!("a is BooBar");
-    }
+    // if let Boo::Bar = a {
+    //     println!("a is BooBar");
+    // }
 }
 
 /// # while let
@@ -525,5 +525,5 @@ pub fn while_let_example() {
             optional = Some(i + 1);
         }
     }// if let 有可选的， else / else if 分句
-    // whil let 没有
+    // while let 没有
 }

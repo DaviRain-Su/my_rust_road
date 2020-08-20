@@ -1,3 +1,4 @@
+pub mod function;
 pub mod control_flow;
 pub mod expression;
 pub mod type_cast;

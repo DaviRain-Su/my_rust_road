@@ -157,13 +157,13 @@ pub fn format_output() {
     println!("{}", format!("{a} {c} {b}", a = 'a', b = 'b', c = 3));
 
     println!("Hello {:5}!", "x");
-    println!("Hello {:1$}!", "x", 5); // ???
-    println!("Hello {1:0$}!", 5, "x"); // ???
+    println!("Hello {:1$}!", "x", 5); //这里的带表的是位置参数1处的值
+    println!("Hello {1:0$}!", 5, "x"); //同理，这里的5的位置是0， 'x'的位置是1, 0$这是取得是0位置的值
     println!("hello {:width$}!", "x", width = 5);
-    println!("{}", format!("hello {:<5}!", "x"));
-    println!("{}", format!("hello {:*<5}!", "x"));
-    println!("{}", format!("hello {:*^5}!", "x"));
-    println!("{}", format!("hello {:*>5}!", "x"));
+    println!("{}", format!("hello {:<5}!", "x")); //左对齐
+    println!("{}", format!("hello {:*<5}!", "x"));//左对齐
+    println!("{}", format!("hello {:*^5}!", "x"));//居中对齐，其余部分补*
+    println!("{}", format!("hello {:*>5}!", "x"));//右对齐
 
     println!("hello {:15}!", format!("{:?}", Some("hi")));
 
@@ -186,6 +186,9 @@ pub fn format_output() {
 
     // let pi = 3.141592;
     println!("Pi is roughly {0:.3}", std::f64::consts::PI);
+
+    let temp = format!("{}", "hello");
+    println!("temp = {}", temp);
 }
 
 /// # 调试

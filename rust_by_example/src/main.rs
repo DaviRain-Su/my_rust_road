@@ -49,7 +49,19 @@ fn main() {
     // rust_by_example::control_flow::loop_lable_example();
     // rust_by_example::control_flow::while_flow_example();
     // rust_by_example::control_flow::for_flow_example();
-    rust_by_example::control_flow::for_in_iterator_three_way();
+    // rust_by_example::control_flow::for_in_iterator_three_way();
+
+
+    //function
+    // rust_by_example::function::function_example();
+    // rust_by_example::function::method_example();
+    // rust_by_example::function::closure_example();
+    // rust_by_example::function::capture_closure_example();
+    // rust_by_example::function::closure_as_input_para_example();
+    // rust_by_example::function::inner_struct_closure_example();
+    // rust_by_example::function::input_function_example();
+    // rust_by_example::function::output_para_example();
+    rust_by_example::function::any_iterator_example();
 }
 
 
