@@ -342,18 +342,18 @@ pub enum List {
 理解
 
 
-[ptr(list::More(Box<Node<B>))] -> (Node(elem A, List::More(Box<Node<B>))) -> (Node(elem B, List::More(Box<Node<C>))) -> (Node(elem C,List::More(Box<Node<D>))) -> (Node(elem D, List:Empty))
+[ptr(list::More(Box<Node<_A_>))] -> (Node(elem _ A _ , List::More(Box<Node<_B_>))) -> (Node(elem _ B _ , List::More(Box<Node<_C_>))) -> (Node(elem _ C _ ,List::More(Box<Node<_D_>))) -> (Node(elem D, List:Empty))
 
 
 List::Empty is 0，空指针优化。这个也就是链表的尾部大小， 链表的尾部没有分配额外的垃圾，通过enum的空指针优化得到的
 
-[ptr(list::More(Box<Node<B>))] 链表的头节点的大小也是固定不变的
+[ptr(list::More(Box<Node<_B_>))] 链表的头节点的大小也是固定不变的
 
-(Node(elem A, List::More(Box<Node<B>)))
+(Node(elem _ A _ , List::More(Box<Node<_B_>)))
+ 
+(Node(elem _ B _ , List::More(Box<Node<_C_>)))
 
-(Node(elem B, List::More(Box<Node<C>)))
-
-(Node(elem C,List::More(Box<Node<D>))) 有相同的内部布局大小，这里就是所有元素都是均匀分配
+(Node(elem _ C _ ,List::More(Box<Node<_D_>))) 有相同的内部布局大小，这里就是所有元素都是均匀分配
 
 
 让我们检查一下我们的优先顺序：
