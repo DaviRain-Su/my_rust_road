@@ -755,9 +755,9 @@ impl List {
     pub fn pop(&mut self) -> Option<i32> {
         match std::mem::replace(&mut self.head, Link::Empty) {
             Link::Empty => None,
-            Link::More(boxed_node) => {
-                let node = *boxed_node;
-                self.head = node.next;
+            Link::More(node) => { // ??
+                // let node = *boxed_node; // ??
+                self.head = node.next; // ???
                 Some(node.elem)
             },
         }

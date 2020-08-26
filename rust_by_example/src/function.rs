@@ -544,3 +544,9 @@ pub fn any_iterator_example() {
     // println!("2 in array2 : {}", &array2.iter().any(|&x| x == 2 ));
     println!("2 in array2 : {}", b.into_iter().any(|&x| x == 2));
 }
+
+
+/// # Iterator::find
+///
+///
+///
