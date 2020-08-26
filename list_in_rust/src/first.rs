@@ -23,7 +23,7 @@ impl List {
         let new_node = Box::new(Node {
             elem,
             next: std::mem::replace(&mut self.head, Link::Empty),
-            //将Link::Empty转移到dest也就是self.head的地方，然后这个函数返回原来的值也就是原来的
+            //将Link::Empty转移到dest也就是self.head的地方，然后这个函数返回原来的值,也就是原来的
             // self.head的值
 
             // next: self.head, // cannot move out of `self.head` which is behind a mutable reference
