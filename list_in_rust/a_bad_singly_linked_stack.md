@@ -234,9 +234,9 @@ enum Foo需要存储一些整数来索引它表示的枚举的变量`(D1, D2, ..
 push C
 
 [Elem A, ptr] -> (Elem B, ptr) -> (Empty, *junk*) 
-										    |
-											|
-										(Elem C, ptr) -> (Empty, *junk*)
+                                            |
+                                            |
+                                          (Elem C, ptr) -> (Empty, *junk*)
 ```
 
 所以这里的*junk*就是一个`(Elem(None, Box<List>)) -- (Elem(None, ptr)) , ptr = Box<List>`;
@@ -273,7 +273,7 @@ Layout 2's split involves just copying B's Pointer to the stack and nulling the 
 
 布局2的拆分只需复制B在栈中存放的指针。并用null将旧的的值替换掉。
 
-**Layout 1最终也是做了同样的事情，但是，必须将C从堆内存拷贝到栈内存。**合并是链表拆分相反的过程。
+Layout 1最终也是做了同样的事情，但是，必须将C从堆内存拷贝到栈内存 合并是链表拆分相反的过程。
 
 链表为数不多的好处之一是，你可以在节点本身中构造元素，然后在不移动它的情况下自由地在列表中移动它。
 
