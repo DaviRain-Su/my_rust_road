@@ -34,6 +34,7 @@ impl List {
             // mem::replace
             //Moves src into the referenced dest, returning the previous dest value.
         });
+
         self.head = Link::More(new_node)
     }
 

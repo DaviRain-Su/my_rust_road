@@ -1,9 +1,3 @@
-
-
-
-
-
-
 # An Ok Singly-Linked Stack 
 
 一个可用的单链栈
