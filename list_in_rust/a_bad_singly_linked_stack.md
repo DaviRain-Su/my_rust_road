@@ -3,10 +3,10 @@
 **How to implement a linked list in Rust**
 
 Should Learn: 
-- The following pointer types: &, &mut, Box, Rc, Arc, *const, *mut
-- Ownership, borrowing, inherited mutability, interior mutability, Copy
-- All The Keywords: struct, enum, fn, pub, impl, use, ...
-- Pattern matching, generics, destructors
+- The following pointer types: `&, &mut, Box, Rc, Arc, *const, *mut`
+- `Ownership, borrowing, inherited mutability, interior mutability, Copy`
+- All The Keywords: `struct, enum, fn, pub, impl, use, ...`
+- `Pattern matching, generics, destructors`
 - Testing
 - Basic Unsafe Rust
 
@@ -56,10 +56,13 @@ We'll put our first list in src/first.rs. We need to tell Rust that first.rs is 
 我们将将把第一个列表放在src/first中。我们需要告诉Rust，first.rs是我们的库使用的东西。 
 所需要做的就是把它挡在src/lib的顶部。
 
-
+```rust
 // in lib.rs
 
 pub mod first;
+```
+
+
 
 
 # Basic Data Layout
@@ -82,7 +85,7 @@ So: It seems fair, we should ask functional programmers for the definition of a 
 
 So: funcitonal programmer give the definition of List:
 
-**List a  = Empty | Elam a (List a)**
+**`List a  = Empty | Elam a (List a)`**
 
 Which Reads approximately as " A List is either Empty or an Element followed by a List".
 
@@ -98,7 +101,7 @@ C语言中的enum的作用是什么？
 
 我们要避免使用泛型来保持简单的实现，只支持存储32位有符号整数。
 
-```
+```rust
 // in first.rs
 
 //pub says we want people outside this module to be able to use List
@@ -128,7 +131,7 @@ error[E0072]: recursive type `first::List` has infinite size
 
 ## Box
 
-pub struct Box<T>( _ );
+`pub struct Box<T>( _ );`
 
 A pointer type for heap allocation. 
 
@@ -137,7 +140,7 @@ Box用于堆分配，Box为这个分配提供了所有权，当它们超出范�
 
 Creating a recursive data structure:
 
-```
+```rust
 #[derive(Debug)]
 enum List<T> {
 	Cons(T, Box<List<T>>),
@@ -151,16 +154,16 @@ println!("{:?}", list); // Cons(1, Box(Cons(2, Box(Nill))))
 
 Recursive structures must be boxed, because if the definition of Cons looked like this:
 
-Cons(T, List<T>),
+`Cons(T, List<T>),`
 
-递归结构必须装箱，因为如果Cons的定义是这样的 Cons(T, List<T>)
+递归结构必须装箱，因为如果Cons的定义是这样的 `Cons(T, List<T>)`
 
 
 这是因为List的大小取决于列表中有多少元素，因此不知道为一个Cons分配多少内存。
 
 通过间接的引入一个Box。它有一个确定的大小，因为知道了Cons需要多大。
 
-```
+```rust
 pub enum List {
 	Empty,
 	Elem(i32, Box<list>),
@@ -173,11 +176,11 @@ pub enum List {
 
 考虑一个包含两个元素的链表：
 
-[] = Stack
+`[] = Stack`
 
-() = Heap
+`() = Heap`
 
-[Elem A, ptr] -> (Elem B, ptr) -> (Empty, *junk*）
+`[Elem A, ptr] -> (Elem B, ptr) -> (Empty, *junk*）`
 
 There are two key issues:
 
@@ -193,7 +196,7 @@ There are two key issues:
 
 考虑下面可能的布局：
 
-[ptr] -> (Elem A, ptr) -> (Elem B, *null*)
+`[ptr] -> (Elem A, ptr) -> (Elem B, *null*)`
 
 在这个布局中，我们现在可以无条件的堆分配节点。与第一个布局的关键区别在于，第二个布局中没有junk(The key difference is the absence of the junk from our first layout.)
 
@@ -208,7 +211,7 @@ To understand that , we'll need to look at how an **enum** is laid out in memory
 
 一般来说，我们有一个枚举如下：
 
-```
+```rust
 enum Foo {
 	D1(T1),
 	D2(T2),
@@ -218,7 +221,7 @@ enum Foo {
 ```
 
 
-enum Foo需要存储一些整数来索引它表示的枚举的变量(D1, D2, ..., Dn)，这里存储的整数就是枚举的标签。enum Foo还需要足够的空间来存储最大的T1, T2,..Tn（加上另外的一些额外的空间，以满足对齐要求）。
+enum Foo需要存储一些整数来索引它表示的枚举的变量`(D1, D2, ..., Dn)`，这里存储的整数就是枚举的标签。enum Foo还需要足够的空间来存储最大的`T1, T2,..Tn`（加上另外的一些额外的空间，以满足对齐要求）。
 
 这里最重要的一点，尽管Empty是一个单独的位信息。（even though Empty is a single bit of information), 为了一个指针和一个元素必须消耗足够的空间， 因为他必须随时准备好称为一个Elem.
 
@@ -236,7 +239,7 @@ push C
 										(Elem C, ptr) -> (Empty, *junk*)
 ```
 
-所以这里的*junk*就是一个(Elem(None, Box<List>)) -- (Elem(None, ptr)) , ptr = Box<List>;
+所以这里的*junk*就是一个`(Elem(None, Box<List>)) -- (Elem(None, ptr)) , ptr = Box<List>`;
 
 第一个布局中的，第一个节点根本没有被分配，但是，这比总是分配它还要糟糕。
 
@@ -278,7 +281,7 @@ Layout 2's split involves just copying B's Pointer to the stack and nulling the 
 
 如何重写列表呢？可以这样做
 
-```
+```rust
 pub enum List {
 	Empty,
 	ElemThenEmpty(i32),
@@ -286,7 +289,7 @@ pub enum List {
 }
 ```
 
-这似乎是个更糟糕的注意。最值得注意的是，这使我们的逻辑更复杂，因为现在有一个完全无效的状态: ElemThenNotEmpty(0, Box<Empty>) ，还受到我们的元素分配不一致的困惑。
+这似乎是个更糟糕的注意。最值得注意的是，这使我们的逻辑更复杂，因为现在有一个完全无效的状态:` ElemThenNotEmpty(0, Box<Empty>)` ，还受到我们的元素分配不一致的困惑。
 
 然而他有一个有趣的属性：它完全避免了分配Empty Case, 将堆分配的总数减少了1。
 
@@ -296,7 +299,7 @@ pub enum List {
 
 我们之前看到，每一个枚举都必须存储一个tag, 来确定内存比特位表示的枚举的变体。但是，如果我们有一种特殊的enum
 
-```
+```rust
 enum Foo {
 	A,
 	B(ContainsANonNullPtr),
@@ -311,13 +314,13 @@ enum Foo {
 
 ## 你能想到其他能做这种优化的枚举和类型吗？ 
 
-事实上很多！这就是为什么Rust enum 布局完全不明确。还有一些更复杂的enum布局优化, 空指针优化绝对是最重要的！(but the null pointer one is definitely the most important!),意思就是&, &mut, Box, Rc, Arc, Vec, 和其他几类重要类型在Rust中没有开销，当将这些放在Option中时。
+事实上很多！这就是为什么Rust enum 布局完全不明确。还有一些更复杂的enum布局优化, 空指针优化绝对是最重要的！(but the null pointer one is definitely the most important!),意思就是`&, &mut, Box, Rc, Arc, Vec,` 和其他几类重要类型在Rust中没有开销，当将这些放在`Option`中时。
 
 那么，我们如何避免额外的junk呢? 统一分配，并且得到空指针优化？
 
 我们需要更好的区分拥有一个元素和分配另一个列表的概念。
 
-要做到这一点，，我们必须使用更类似C-like: struct!
+要做到这一点，，我们必须使用更类似`C-like: struct!`
 
 虽然enum 允许我们声明一个可以包含多个类型中的一个类型。但是struct允许我们声明同时包含多个值的类型。
 
@@ -327,7 +330,7 @@ enum Foo {
 和前面一样，List或者是空或者是一个元素后跟着另一个List。通过用一个完全独立的类型表示
 has an element followed by another list, 
 
-```
+```rust
 struct Node {
 	elem: i32,
 	next: List,
@@ -341,19 +344,17 @@ pub enum List {
 
 理解
 
+`[ptr(list::More(Box<Node<_A_>))] -> (Node(elem _ A _ , List::More(Box<Node<_B_>))) -> (Node(elem _ B _ , List::More(Box<Node<_C_>))) -> (Node(elem _ C _ ,List::More(Box<Node<_D_>))) -> (Node(elem D, List:Empty))`
 
-[ptr(list::More(Box<Node<_A_>))] -> (Node(elem _ A _ , List::More(Box<Node<_B_>))) -> (Node(elem _ B _ , List::More(Box<Node<_C_>))) -> (Node(elem _ C _ ,List::More(Box<Node<_D_>))) -> (Node(elem D, List:Empty))
+`List::Empty is 0`，空指针优化。这个也就是链表的尾部大小， 链表的尾部没有分配额外的垃圾，通过enum的空指针优化得到的
 
+`[ptr(list::More(Box<Node<_B_>))]` 链表的头节点的大小也是固定不变的
 
-List::Empty is 0，空指针优化。这个也就是链表的尾部大小， 链表的尾部没有分配额外的垃圾，通过enum的空指针优化得到的
+`(Node(elem _ A _ , List::More(Box<Node<_B_>)))`
 
-[ptr(list::More(Box<Node<_B_>))] 链表的头节点的大小也是固定不变的
+`(Node(elem _ B _ , List::More(Box<Node<_C_>)))`
 
-(Node(elem _ A _ , List::More(Box<Node<_B_>)))
- 
-(Node(elem _ B _ , List::More(Box<Node<_C_>)))
-
-(Node(elem _ C _ ,List::More(Box<Node<_D_>))) 有相同的内部布局大小，这里就是所有元素都是均匀分配
+`(Node(elem _ C _ ,List::More(Box<Node<_D_>)))` 有相同的内部布局大小，这里就是所有元素都是均匀分配
 
 
 让我们检查一下我们的优先顺序：
@@ -377,17 +378,17 @@ warning: private type `first::Node` in public interface (error E0446)
   = warning: this was previously accepted by the compiler but
     is being phased out; it will become a hard error in a future release!
 ```
-    
-    
+
+
 我们将List标记为public（因为我们希望人们能够使用它），但是不是Node。
 
 可问题是enum的内部是完全公开的，但是我们不允许公开访问私有类型Node。
-   
+
 我们可以将Node的所有内容完全公开，但是通常情况下，我们倾向于将实现细节保密。
-   
+
 让我们使List成为一个结构体，这样我们就可以隐藏实现细节了
 
-```
+```rust
 pub struct List{
    	head: Link,
 }
@@ -404,7 +405,7 @@ struct Node {
 ```
 
 因为List是一个只有一个字段的结构，所以他的大小与该字段相同。 Zero-cost abstractions
-  
+
 ```
 > cargo build
 
@@ -439,22 +440,22 @@ warning: field is never used: `next`
    |
 12 |     next: Link,
    |     ^^^^^^^^^^
-``` 
+```
 
 Ok, Complied!  Rust是相当疯狂的，因为据他所知，我们写得所有东西都是完全无用的，因为我们从不使用head, 没有人使用我们的库，因为他是私人的。进一步说，这意味着Link和Node也是无用的。让我们来解决这个问题吧。让我们实现一些代码为List.
- 
+
 # New
 
 为了将实际代码与类型关联起来，使用impl块：
 
-```
+```rust
 impl List {
 	//TODO, Make code happen
 }
 ```
 现在我们只需要弄清楚如何实际编写代码：
 
-```
+```rust
 
 fn foo(arg1: Tyep, arg2: Type2) -> ReturnType{
 	// body
@@ -464,7 +465,7 @@ fn foo(arg1: Tyep, arg2: Type2) -> ReturnType{
 
 我们首先需要的是一种构造列表的方法。因为我们隐藏了实现细节（struct 中的变量默认都是私有的），所以我们需要将其作为一个函数提供。在Rust中通常的做法是提供一个静态方法，这只是在impl中的一个普通函数：
 
-```
+```rust
 impl List {
 	pub fn new() -> Self {
 			Self { Head: Link::Empty }
@@ -488,19 +489,19 @@ impl List {
 
 方法是Rust函数的一个特例，因为self参数没有声明类型
 
-```
+```rust
 fn foo(self, arg2: Type2) -> ReturnType {
 	//body
 }
 ```
 
-对于self有三种不同的形式：self, &self, &mut self, 这三种形式代表了Rust中三种主要的所有权形式：
+对于self有三种不同的形式：`self, &self, &mut self,` 这三种形式代表了Rust中三种主要的所有权形式：
 
-- self - value
+- `self `- value
 
-- &mut self - mutable reference
+- `&mut self` - mutable reference
 
-- &self shared reference
+- `&self `shared reference
 
 value represents true ownership. 可以对value做任何你想做的事情。move it, destroy it, mutate it, 或者loan it out via a reference.
 
@@ -517,7 +518,7 @@ value represents true ownership. 可以对value做任何你想做的事情。mov
 
 # Push
 
-```
+```rust
 impl List{
 	pub fn push(&mut self, elem: i32) {
 		//TODO 
@@ -528,7 +529,7 @@ impl List{
 
 创建一个节点来存储我们的元素
 
-```
+```rust
 pub fn push(&mut self, elem: i32) {
 	let new_node = Node {
 		elem: elem,
@@ -537,17 +538,17 @@ pub fn push(&mut self, elem: i32) {
 }
 
 ```
-   
-这里我们试图把self.head移动到新的节点的next中，但是rust不允许我们这么做。
+
+这里我们试图把`self.head`移动到新的节点的next中，但是rust不允许我们这么做。
 这样会导致self变成为未初始化，当我们结束借用时返回给调用者。这将会出错，这个调用者变成了部分没有初始化。
-这也是前面所说的，这是唯一不能在&mut中做的事情。
+这也是前面所说的，这是唯一不能在`&mut`中做的事情。
 
 原则上，rust实际上是可以接受这一点的，但是由于Box所有权的关系。
 我们需要一些方法来得到head，而不会让Rust发现它不见了。
 
-通过mem::replace 这个函数非常有用，可以通过另一个值替换一个借用来窃取一个值。
+通过`mem::replace `这个函数非常有用，可以通过另一个值替换一个借用来窃取一个值。
 
-```
+```rust
 pub fn push(&mut self, elem: i32) {
         let new_node = Box::new(Node {
             elem,
@@ -568,27 +569,27 @@ pub fn push(&mut self, elem: i32) {
 
 ```
 
-在这里，通过replace将self.head暂时替换为Link::Empty,然后在替换为列表的新的头部。
+在这里，通过`replace`将self.head暂时替换为Link::Empty,然后在替换为列表的新的头部。
 
 # Pop
 
 同理pop也需要改变列表， 但是pop需要返回一些东西。但是pop有可能pop一个空的列表时，这是为了处理这种情况，使用Option来处理这种这种情况。
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 	//TODO
 }
 ```
 
-Option<T>是一个枚举值，表示可能存在。可以使Some(T), 或者None.
+`Option<T>`是一个枚举值，表示可能存在。可以使`Some(T)`, 或者`None.`
 
 我们自己也可以创建自己的枚举类型，同link那样。 因为Option是如此的通用，以至于被隐式导入到每个文件的作用域中，
 
-Option<T>中的T是泛型，这意味着可以为任何类型创建一个Option。
+`Option<T>`中的T是泛型，这意味着可以为任何类型创建一个Option。
 
 所以，如果我们有Link，如何知道他是Empty还是More， 通过模式匹配match
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 	match self.head {
 		Link::Empty => {	
@@ -602,12 +603,11 @@ pub fn pop(&mut self) -> Option<i32> {
 }
 ```
 
-pop 必须返回一个值，这里我们没有完成这个函数因此使用unimplemented!(), 表示我们还没有完成函数的实现。他是一个宏。
-当运行到他时。会使程序panic!
-
+pop 必须返回一个值，这里我们没有完成这个函数因此使用`unimplemented!()`, 表示我们还没有完成函数的实现。他是一个宏。
+当运行到他时。会使程序`panic!`
 
 无条件的panic是一个发散函数的例子。发散函数不会返回给调用方。因此他们可以用在任何类型都可能存在的地方。
-在这里使用unimplemented!() 取代Option<T>的值。
+在这里使用`unimplemented!() `取代`Option<T>`的值。
 
 我们不需要在函数中写return，因为函数中的最后一个表达式隐式地表示它的返回值。
 也可以像C语言一样显式的返回return
@@ -634,7 +634,7 @@ note: move occurs because `node` has type `std::boxed::Box<first::Node>`, which 
 
 Rust的帮助信息说，可以在match的参数上加上&来解决。
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 	match &self.head {
 		Link::Empty => {	
@@ -651,11 +651,11 @@ pub fn pop(&mut self) -> Option<i32> {
 
 继续理清这个逻辑。我们需要创建一个Option。
 
-当时Empty是返回None。
+当时Empty是返回`None`。
 
-在More的情况下，需要返回Some(i32),并且改变list的head
+在More的情况下，需要返回`Some(i32)`,并且改变list的head
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 
     match &self.head {
@@ -684,9 +684,9 @@ error[E0507]: cannot move out of borrowed content
 ```
 
 我们试图移出node, 但是我们只有一个对它的共享引用。
- 
+
 想想我们到底需要做什么：
- 
+
  - 检查列表是否为空
  - 如果为空，就返回None
  - 如果不空的话，
@@ -694,12 +694,12 @@ error[E0507]: cannot move out of borrowed content
 	remove its elem
     将list's head 替换为他的head的next
     返货Some(elem)
- 	
+
 关键的观点是我们想要删除一些东西，这意味着我们我们要通过by value（所有权也就是所有权默认移动的方式）的方式得到list的head。
 
 显然我们不能通过共享引用 去得到,&self.head来操作。 我们只有一个可变引用，所有唯一的方法就是replace.
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 	match std::mem::replace(&mut self.head, Link::Empty)  {
 		let result;
@@ -718,7 +718,7 @@ pub fn pop(&mut self) -> Option<i32> {
 
 通常使用分号会使块返回（）
 
-```
+```rust
 pub fn pop(&mut self) -> Option<i32> {
 	match std::mem::replace(&mut self.head, Link::Empty)  {
 		Link::Empty => None,
@@ -739,7 +739,7 @@ pub fn pop(&mut self) -> Option<i32> {
 
 通常我们会为测试创建一个新的命名空间，以避免和真实的代码冲突。
 
-```
+```rust
 mod test{
 	#[test]
 	fn basic() {
@@ -749,7 +749,7 @@ mod test{
 ```
 
 然后使用cargo test来测试
-```
+```rust
 mod test{
 	#[test]
 	fn basic() {
@@ -795,7 +795,7 @@ error[E0433]: failed to resolve: use of undeclared type or module `List`
 ```
 因为我们创建了一个新模块，所以需要显式地pull list来使用。
 
-```
+```rust
 mod test{
 	use super::List;
 	
@@ -855,9 +855,9 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 为了满足编译器，我们应该指示只有在运行时才应该编译整个测试模块
 
-在mode test 的上面加上#[cfg(test)]
+在mode test 的上面加上`#[cfg(test)]`
 
-```
+```rust
 #[cfg(test)]
 mod test {
     use super::List;
@@ -867,10 +867,10 @@ mod test {
 
 # Drop
 
-Rust使用析构函数来自动清理资源，如果一个类型实现了一个叫做Drop trait 的trait, 这个类型就有了一个析构函数。
+Rust使用析构函数来自动清理资源，如果一个类型实现了一个叫做`Drop trait `的trait, 这个类型就有了一个析构函数。
 Trait are Rust's fancy term for interfaces.
 
-```
+```rust
 pub trait Drop {
 	fn drop(&mut self);
 }
@@ -887,13 +887,13 @@ When you go out of scope, I'll give you a scond to clean up your affairs
 
 但是自动处理会很糟糕。
 
-list -> A -> B -> C
+`list -> A -> B -> C``
 
 当list被删除时，它将尝试删除a, 而a将尝试删除b， 而b将尝试删除c。可以看出这是递归的代码，但是递归的代码会爆栈。
 
 有些人会认为‘这显然是尾递归，任何正确的语言都会确保这样的代码不会破坏stack’ 事实这是不正确的。为了找到原因，我们需要手动实现Drop
 
-```
+```rust
 impl Drop for List {
 	fn drop(&mut self) {
 		// you can't actually explicitly call drop in real Rust code
@@ -931,7 +931,7 @@ impl Drop for Node {
 我们不能删除释放Box中内容，当Box被删除后，所以没有办法以尾递归的方式删除！相反，不得不手动编写一个迭代的删除list。
 Instead, we're going to have to manually write an iteratibe drop for List that hoists nodes out of theis boxed.
 
-```
+```rust
 impl Drop for List {
 	fn drop(&mut self) {
 		let mut cur_link = mem::replace(&mut self.head, Link::Empty);
@@ -948,18 +948,18 @@ impl Drop for List {
 
 # Premature Optimization
 
-我们的drop实际上非常类似于while let Some( _ ) = self.pop() {},这个当然更简单。
+我们的drop实际上非常类似于``while let Some( _ ) = self.pop() {}`,这个当然更简单。
 但是一旦我们开始泛化我们存储的类型。他们之间有什么不同，以及可能会导致什么性能问题？
 
-pop返回Option<i32>，而我们的实现只操纵链接Box<Node>。因此，我们的实现只是围绕指向节点的指针移动。
+pop返回`Option<i32>`，而我们的实现只操纵链接`Box<Node>`。因此，我们的实现只是围绕指向节点的指针移动。
 而基于pop的指针将围绕存储在节点中的值移动。如果我们泛化了我们的列表，并且有人会用它来存储非常大的实例，
 那么这种操作将非常昂贵。Box能够就地运行drop其内容，所以它不会受到这个问题的影响。由于超大实例正是实际上
 使用链表比数组更可取的东西，因此在在这种情况下表现不佳会让人失望。
 
-如果你希望两种实现都具有最好的性能。那么客户已添加一个新的方法fn pop _ node(&mut self) -> Link, 从这个方法中可以派生出pop
+如果你希望两种实现都具有最好的性能。那么客户已添加一个新的方法`fn pop _ node(&mut self) -> Link`, 从这个方法中可以派生出pop
 和drop。
 
-```
+```rust
 
 pub struct List {
    head: Link,

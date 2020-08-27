@@ -6,5 +6,5 @@ a.out
 .vscode
 
 #Added by cargo
-
+Cargo.lock
 /target
