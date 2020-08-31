@@ -42,6 +42,7 @@ impl<T> List<T>{
         // pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Option<U>
         // 因此这里需要用到take方法
         self.head.take().map(|node|{
+            let node = *node;
             self.head = node.next;
             node.elem
         })
