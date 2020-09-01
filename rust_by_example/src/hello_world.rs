@@ -3,18 +3,19 @@
 // use std::intrinsics::write_bytes;
 
 /// # Hello World
-    ///
-    /// println!是一个宏，可以将文本输出到控制台
-    ///
-    /// ```
-    ///  pub fn hello_world() {
-    ///         println!("Hello World!");
-    ///         println!("I'm a Rustacean!");
-    ///     }
-    /// ```
+///
+/// println!是一个宏，可以将文本输出到控制台
+///
+/// ```
+///  pub fn hello_world() {
+///         println!("Hello World!");
+///         println!("I'm a Rustacean!");
+///     }
+/// ```
 pub fn hello_world() {
     println!("Hello World!");
     println!("I'm a Rustacean!");
+    println!("hello, world");
 }
 
 /// # 注释
@@ -55,7 +56,6 @@ pub fn statement() {
 /// 文档注释对于大型项目来说非常重要
 ///
 pub fn doc_statement() {
-
     /// 这里给出一个人类
     ///
     pub struct Person {
@@ -79,9 +79,7 @@ pub fn doc_statement() {
         /// let person = Person::new("name");
         /// ```
         pub fn new(name: &str) -> Person {
-            Person{
-                name: name.into(),
-            }
+            Person { name: name.into() }
         }
 
         /// 给一个友好的问候！
@@ -131,10 +129,10 @@ pub fn format_output() {
     println!("{} of {:b} people know binary, the other half don't", 1, 2);
 
     // 可以按指定宽度来右对齐文本
-    println!("{number:>width$}", number=1, width=6);
+    println!("{number:>width$}", number = 1, width = 6);
 
     //println! 会检查使用到的参数数量是否正确
-    println!("My name is {0}, {1} {0}", "Bond","James");
+    println!("My name is {0}, {1} {0}", "Bond", "James");
 
     //创建一个包含单个`i32`的结构体
     #[allow(dead_code)]
@@ -161,9 +159,9 @@ pub fn format_output() {
     println!("Hello {1:0$}!", 5, "x"); //同理，这里的5的位置是0， 'x'的位置是1, 0$这是取得是0位置的值
     println!("hello {:width$}!", "x", width = 5);
     println!("{}", format!("hello {:<5}!", "x")); //左对齐
-    println!("{}", format!("hello {:*<5}!", "x"));//左对齐
-    println!("{}", format!("hello {:*^5}!", "x"));//居中对齐，其余部分补*
-    println!("{}", format!("hello {:*>5}!", "x"));//右对齐
+    println!("{}", format!("hello {:*<5}!", "x")); //左对齐
+    println!("{}", format!("hello {:*^5}!", "x")); //居中对齐，其余部分补*
+    println!("{}", format!("hello {:*>5}!", "x")); //右对齐
 
     println!("hello {:15}!", format!("{:?}", Some("hi")));
 
@@ -180,9 +178,24 @@ pub fn format_output() {
     println!("hello {} is {2:.*}", "x", 5, 0.01);
     println!("hello {} is {number:.prec$}", "x", prec = 5, number = 0.01);
 
-    println!("{}, `{name:.*}` has 3 fractional digits", "Hello", 3, name= 1234.56);
-    println!("{}, `{name:.*}` has 2 characters", "hello", 3, name="1234.56");
-    println!("{}, `{name:>8.*}` has 3 right-aligned characters", "hello", 3, name="1234.56");
+    println!(
+        "{}, `{name:.*}` has 3 fractional digits",
+        "Hello",
+        3,
+        name = 1234.56
+    );
+    println!(
+        "{}, `{name:.*}` has 2 characters",
+        "hello",
+        3,
+        name = "1234.56"
+    );
+    println!(
+        "{}, `{name:>8.*}` has 3 right-aligned characters",
+        "hello",
+        3,
+        name = "1234.56"
+    );
 
     // let pi = 3.141592;
     println!("Pi is roughly {0:.3}", std::f64::consts::PI);
@@ -206,27 +219,25 @@ pub fn debug_print() {
     struct Deep(Structure);
 
     println!("{:?} month in a year", 12);
-    println!("{1:?} {0:?} in the {actor:?} name",
+    println!(
+        "{1:?} {0:?} in the {actor:?} name",
         "Slater",
         "Christina",
-        actor="actor's"
+        actor = "actor's"
     );
 
     println!("Now {:?} will pint!", Structure(2));
     println!("Now {:?} will print!", Deep(Structure(3)));
 
     #[derive(Debug)]
-    struct Person<'a>{
+    struct Person<'a> {
         name: &'a str,
         age: u8,
     }
 
-    impl <'a> Person<'a> {
+    impl<'a> Person<'a> {
         fn new(name: &'a str, age: u8) -> Self {
-            Person {
-                name,
-                age,
-            }
+            Person { name, age }
         }
 
         fn name(&self) -> &str {
@@ -263,15 +274,15 @@ pub fn display_example() {
     }
 
     #[derive(Debug)]
-    struct  MinMax(i64, i64);
+    struct MinMax(i64, i64);
 
-    impl  fmt::Display for MinMax {
+    impl fmt::Display for MinMax {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "({}, {})", self.0, self.1)
         }
     }
     #[derive(Debug)]
-    struct Point2D{
+    struct Point2D {
         x: f64,
         y: f64,
     }
@@ -283,7 +294,7 @@ pub fn display_example() {
     }
 
     #[derive(Debug)]
-    struct Complex{
+    struct Complex {
         real: f64,
         imag: f64,
     }
@@ -299,7 +310,6 @@ pub fn display_example() {
     println!("Display: {}", structure);
     println!("Debug: {:?}", structure);
 
-
     let minmax = MinMax(0, 14);
     println!("Compare MinMax: ");
     println!("Display: {}", minmax);
@@ -307,7 +317,8 @@ pub fn display_example() {
 
     let big_range = MinMax(-300, 300);
     let small_range = MinMax(-3, 3);
-    println!("The big range is {big} anf the small is {small}",
+    println!(
+        "The big range is {big} anf the small is {small}",
         small = small_range,
         big = big_range
     );
@@ -316,12 +327,15 @@ pub fn display_example() {
     // println!("Display: {}", big_range);
     // println!("Debug: {:?}", big_range);
 
-    let point = Point2D { x: 3.3, y: 4.4};
+    let point = Point2D { x: 3.3, y: 4.4 };
     println!("Compare Point2D:");
     println!("Display: {}", point);
     println!("Debug: {:?}", point);
 
-    let complex = Complex { real: 3.3, imag: 4.4};
+    let complex = Complex {
+        real: 3.3,
+        imag: 4.4,
+    };
     println!("Compare Complex:");
     println!("Display: {}", complex);
     println!("Debug: {:?}", complex);
@@ -345,8 +359,10 @@ pub fn test_list() {
             write!(f, "[")?;
 
             for (count, v) in vec.iter().enumerate() {
-                if count != 0  { write!(f, ", ")?; }
-                write!(f, "{}: {}",count, v)?;
+                if count != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}: {}", count, v)?;
             }
 
             write!(f, "]")
@@ -355,16 +371,15 @@ pub fn test_list() {
 
     let v = List(vec![1, 2, 3]);
     println!("v = {}", v);
-
 }
 
 /// # 格式化
 ///
 ///
 pub fn format_example() {
-    use std::fmt::{self, Formatter, Display};
+    use std::fmt::{self, Display, Formatter};
 
-    struct  City {
+    struct City {
         name: &'static str,
         //维度
         lat: f32,
@@ -373,10 +388,18 @@ pub fn format_example() {
     }
     impl Display for City {
         fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-            let lat_c = if self.lat >= 0.0 { 'N' } else { 'S'};
+            let lat_c = if self.lat >= 0.0 { 'N' } else { 'S' };
             let lon_c = if self.lon >= 0.0 { 'E' } else { 'W' };
 
-            write!(f, "{}: {:.3} {} {:.3} {}", self.name, self.lat.abs(), lat_c, self.lon.abs(), lon_c)
+            write!(
+                f,
+                "{}: {:.3} {} {:.3} {}",
+                self.name,
+                self.lat.abs(),
+                lat_c,
+                self.lon.abs(),
+                lon_c
+            )
         }
     }
 
@@ -387,27 +410,61 @@ pub fn format_example() {
         blue: u8,
     }
 
-    impl  Display for Color {
+    impl Display for Color {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             // write!(f, "red:{}, green:{}, blue:{}", self.red, self.green, self.blue)
-            write!(f, "RGB ({}, {}, {}) {}", self.red, self.green, self.blue,
-                   format!("0x{:02X}{:02X}{:02X}", self.red, self.green, self.blue))
+            write!(
+                f,
+                "RGB ({}, {}, {}) {}",
+                self.red,
+                self.green,
+                self.blue,
+                format!("0x{:02X}{:02X}{:02X}", self.red, self.green, self.blue)
+            )
         }
     }
 
     for city in [
-        City { name: "Dublin", lat: 53.347778, lon: -6.259722},
-        City { name: "Oslo", lat: 59.95, lon: 10.75},
-        City { name: "Vancouver", lat: 49.25, lon: -123.1},
-    ].iter() {
+        City {
+            name: "Dublin",
+            lat: 53.347778,
+            lon: -6.259722,
+        },
+        City {
+            name: "Oslo",
+            lat: 59.95,
+            lon: 10.75,
+        },
+        City {
+            name: "Vancouver",
+            lat: 49.25,
+            lon: -123.1,
+        },
+    ]
+    .iter()
+    {
         println!("{}", *city);
     }
 
     for color in [
-        Color { red: 128, green: 255, blue: 90},
-        Color { red: 0, green: 3, blue: 254},
-        Color { red: 0, green: 0, blue: 0},
-    ].iter() {
+        Color {
+            red: 128,
+            green: 255,
+            blue: 90,
+        },
+        Color {
+            red: 0,
+            green: 3,
+            blue: 254,
+        },
+        Color {
+            red: 0,
+            green: 0,
+            blue: 0,
+        },
+    ]
+    .iter()
+    {
         println!("{}", *color)
     }
 }

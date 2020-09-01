@@ -9,10 +9,11 @@ pub fn immutable_and_mutable_variables_example() {
     println!("change before x = {}", x);
     x = 13;
     println!("change after x = {}", x);
-
+    
     // for immutable
     let x = 34;
     println!("change before x = {}", x);
     // x = 23;
     println!("change after x = {}", x);
+    
 }
