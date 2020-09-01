@@ -1037,5 +1037,376 @@ fn into_iter() {
 
 ```
 
+## Iter 
+
+Iter - &T 
+
+Iter中保存的是一个指针，指向下一个要生成的当前节点。因为生成的节点可能不存在所以使用Option包装。
+
+```rust
+
+pub struct Iter<T> {
+    next: Option<&Node<T>>,
+}
+
+impl<T> List<T> {
+    pub fn iter(&self) -> Iter<T> {
+        Iter { next: self.head.map(|node| &node) } //error 
+    }
+}
+
+impl<T> Iterator for Iter<T> {
+    type Item = &T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.map(|node| &node); //error
+            &node.elem
+        })
+    }
+}
+
+```
+
+因为其中使用的是引用，所以需要使用生命周期参数。上面编译会出错。
+
+生命周期参数是为编译器准备的，声明周期的参数使用只有一个原则，就是输出的生命周期不能大于输入的生命周期。（即， 借用方不能大于出借方的生命周期）
+
+
+一些生命周期的省略规则
+
+```rust
+// Only one reference in input, so the output must be derived from that input
+fn foo(&A) -> &B; // sugar for:
+fn foo<'a>(&'a A) -> &'a B;
+
+// Many inputs, assume they're all independent
+fn foo(&A, &B, &C); // sugar for:
+fn foo<'a, 'b, 'c>(&'a A, &'b B, &'c C);
+
+// Methods, assume all output lifetimes are derived from `self`
+fn foo(&self, &B, &C) -> &D; // sugar for:
+fn foo<'a, 'b, 'c>(&'a self, &'b B, &'c C) -> &'a D;
+
+```
+
+
+一个OK的版本
+
+```Rust
+
+
+pub struct Iter<'a, T> { //加入了lifetime, 结构体中使用时必须先声明
+    next: Option<&'a Node<T>>,
+}
+
+impl<T> List<T> {
+    //加入了lifetime,函数中使用必须先声明
+    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) } // 使用as_ref是因为map默认方式是移动语义
+        // 这里的两个** 是因为as_ref或多一个， Box也是一个，所以需要两个**， 解引用
+
+        // 另一种写法
+        // Iter {     self.next = node.next.as_ref().map::<&Node<T>, _>(|node| &node);
+        //     }
+    }
+}
+
+// impl<T> List<T> {
+//     pub fn iter(&self) -> Iter<T> {
+//         Iter { next: self.head.as_ref().map(|node| &**node) }
+//     }
+// }
+
+
+// impl<T> List<T> {
+//     pub fn iter(&self) -> Iter<'_, T> {
+//         Iter { next: self.head.as_ref().map(|node| &**node) }
+//     }
+// }
+
+
+// 加入了lifetime, 
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            
+            self.next = node.next.as_ref().map(|node| &**node); // 这里的原因同上
+            &node.elem
+        })
+    }
+}
+
+```
+
+```rust
+#[test]
+fn iter() {
+    let mut list = List::new();
+    list.push(1); list.push(2); list.push(3);
+
+    let mut iter = list.iter();
+    assert_eq!(iter.next(), Some(&3));
+    assert_eq!(iter.next(), Some(&2));
+    assert_eq!(iter.next(), Some(&1));
+}
+
+```
+
+
+## IterMut 
+
+**IterMut - &mut T**
+
+
+```rust
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+impl<T> List<T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut { next: self.head.as_mut().map(|node| &mut **node) }
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| { //因为&mut self是唯一引用，不能复制，不能存在多个这里需要使用take(),来保证，不会存在多个可变引用
+            self.next = node.next.as_mut().map(|node| &mut **node);
+            &mut node.elem
+        })
+    }
+}
+
+```
+
+前面说过map会按移动语义来捕获变量， 但是as_ref, 返回的是不可变引用，对于不可变引用是Copy 语义，所有权语义这里也不会出现问题。
+
+对于Copy的类型，移动之后原来的值还在。所有as_ref的是使用就OOK了。
+
+但是对于&mut T 的引用是不能同时同时存在多个的，所以不具有Copy trait， 
+
+
+```rust
+#[test]
+fn iter_mut() {
+    let mut list = List::new();
+    list.push(1); list.push(2); list.push(3);
+
+    let mut iter = list.iter_mut();
+    assert_eq!(iter.next(), Some(&mut 3));
+    assert_eq!(iter.next(), Some(&mut 2));
+    assert_eq!(iter.next(), Some(&mut 1));
+}
+
+```
+
+
+## Final Code 
+
+```rust
+
+#![allow(unused_variables)]
+fn main() {
+pub struct List<T> {
+    head: Link<T>,
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None }
+    }
+
+    pub fn push(&mut self, elem: T) {
+        let new_node = Box::new(Node {
+            elem: elem,
+            next: self.head.take(),
+        });
+
+        self.head = Some(new_node);
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        self.head.take().map(|node| {
+            self.head = node.next;
+            node.elem
+        })
+    }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| {
+            &node.elem
+        })
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| {
+            &mut node.elem
+        })
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut { next: self.head.as_mut().map(|node| &mut **node) }
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur_link = self.head.take();
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = boxed_node.next.take();
+        }
+    }
+}
+
+pub struct IntoIter<T>(List<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        // access fields of a tuple struct numerically
+        self.0.pop()
+    }
+}
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_mut().map(|node| &mut **node);
+            &mut node.elem
+        })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+
+    #[test]
+    fn basics() {
+        let mut list = List::new();
+
+        // Check empty list behaves right
+        assert_eq!(list.pop(), None);
+
+        // Populate list
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push(4);
+        list.push(5);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), None);
+    }
+
+    #[test]
+    fn peek() {
+        let mut list = List::new();
+        assert_eq!(list.peek(), None);
+        assert_eq!(list.peek_mut(), None);
+        list.push(1); list.push(2); list.push(3);
+
+        assert_eq!(list.peek(), Some(&3));
+        assert_eq!(list.peek_mut(), Some(&mut 3));
+
+        list.peek_mut().map(|value| {
+            *value = 42
+        });
+
+        assert_eq!(list.peek(), Some(&42));
+        assert_eq!(list.pop(), Some(42));
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter_mut();
+        assert_eq!(iter.next(), Some(&mut 3));
+        assert_eq!(iter.next(), Some(&mut 2));
+        assert_eq!(iter.next(), Some(&mut 1));
+    }
+}
+
+}
+```
+
+
 
 
