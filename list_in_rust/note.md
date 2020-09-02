@@ -1409,6 +1409,1197 @@ mod test {
 
 
 
+# A Persistent Singly - Linked Stack 
+
+从单一所有权list转移到共享所有权list
+
+
+将要使用Rc， Arc.
+
+## Layout 
+
+Persistent List 可以方便的操作list
+
+
+下面的操作方式是很少见的:
+
+```
+list1 = A -> B -> C -> D
+list2 = tail(list1) = B -> C -> D
+list3 = push(list2, X) = X -> B -> C -> D
+
+list1 -> A ---+
+              |
+              v
+list2 ------> B -> C -> D
+              ^
+              |
+list3 -> X ---+
+
+```
+
+这里对于使用Box存储数据的list是不行的，因为Box是具有所有权属性的。
+这里就会出现问题谁去应该释放它？而且， 这样的一个方式，在Box中是不可能会出现的。
+
+
+对于函数式语言中这是可能的， 拥有垃圾回收的语言中都回去实现这样的功能。
+
+B只有在所有的人都停止查看之后才会被释放。
+
+Rc就是简单的具有引用计数的智能指针， 就像Box一样，但是我们可以去复制它，并且它的内存只有当所有Rc的派生被删除出时，内存才会被释放。
+
+但是，Rc的缺点是： 不能真正的获取内部的值，不能可变其内部中包装的值。只用去共享的使用内存的引用。
+
+```rust
+use std::rc::Rc; 
+
+// in third.rs
+
+pub struct List<T> {
+    head: Link<T>,
+}
+
+type Link<T> = Option<Rc<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+```
+
+
+## BASIC
+
+```rust
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None }
+    }
+}
+```
+
+append方式是接受一个list和一个元素，返回一个list。
+创建一个新的节点，它的下一个值是旧列表。这里的特点是如何得到下一个值，因为这里我们不允许变化任何东西。
+
+通过的及时Rc的clone 特性。Rc的Clone会增加引用计数的方法， 
+相当与使用Rc的clone来复制所有权，与将Box移动到子列表中，我们只需要克隆旧列表的头部。甚至不用去匹配head，因为Option中也提供了clone的方法。
+
+```rust
+pub fn append(&self, elem: T) -> List<T> {
+    List { head: Some(Rc::new(Node {
+        elem: elem,
+        next: self.head.clone(),
+    }))}
+}
+
+pub fn tail(&self) -> List<T> {
+    List { head: self.head.as_ref().map(|node| node.next.clone()) }
+}
+
+```
+
+```
+cargo build
+
+error[E0308]: mismatched types
+  --> src/third.rs:27:22
+   |
+27 |         List { head: self.head.as_ref().map(|node| node.next.clone()) }
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `std::rc::Rc`, found enum `std::option::Option`
+   |
+   = note: expected type `std::option::Option<std::rc::Rc<_>>`
+              found type `std::option::Option<std::option::Option<std::rc::Rc<_>>>`
+
+```
+
+这里是因为map期望返回的是Y(std::rc::Rc)， 但是这里返回的是Option(), 这是可以使用Option中的额and_then()
+
+```rust
+pub fn and_then<U, F>(self, f: F) -> Option<U>
+where
+    F: FnOnce(T) -> Option<U>,
+```
+
+```rust
+pub fn tail(&self) -> List<T> {
+    List { head: self.head.as_ref().and_then(|node| node.next.clone()) }
+}
+
+```
+head方法返回第一个元素的引用
+
+```rust
+pub fn head(&self) -> Option<&T> {
+    self.head.as_ref().map(|node| &node.elem )
+}
+```
+
+```rust
+#[cfg(test)]
+mod test {
+    use super::List;
+
+    #[test]
+    fn basics() {
+        let list = List::new();
+        assert_eq!(list.head(), None);
+
+        let list = list.append(1).append(2).append(3);
+        assert_eq!(list.head(), Some(&3));
+
+        let list = list.tail();
+        assert_eq!(list.head(), Some(&2));
+
+        let list = list.tail();
+        assert_eq!(list.head(), Some(&1));
+
+        let list = list.tail();
+        assert_eq!(list.head(), None);
+
+        // Make sure empty tail works
+        let list = list.tail();
+        assert_eq!(list.head(), None);
+
+    }
+}
+
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<T> List<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) }
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+#[test]
+fn iter() {
+    let list = List::new().append(1).append(2).append(3);
+
+    let mut iter = list.iter();
+    assert_eq!(iter.next(), Some(&3));
+    assert_eq!(iter.next(), Some(&2));
+    assert_eq!(iter.next(), Some(&1));
+}
+
+```
+
+我们不能为这种类型实现 IntoIter 或 IterMut，我们只能共享对元素的访问
+
+## DROP
+
+```rust
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur_link = self.head.take();
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = boxed_node.next.take(); 
+            // 这里有问题的是，Rc中会有多个节点指向的问题，只有当这个节点是最后一个没有引用计数指向时，可以删除
+        }
+    }
+}
+
+//通过Rc的try_unwrap()
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut head = self.head.take();
+        while let Some(node) = head {
+            if let Ok(mut node) = Rc::try_unwrap(node) {
+                head = node.next.take();
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+```
+## ARC
+
+不可变意味着可以跨线程共享，共享可变的状态是罪恶的。
+
+
+Arc, 线程安全的引用计数
+
+rust中通过Send, Sync来标记一个类型是线程安全的。
+如果可以安全的移动到另一个线程，则这个类型是Send的。
+如果可以安全的在线程之间共享， 这个类型是Sync的。
+
+如果T是Sync的，则&T是Send的。这样线程安全意味着捕获引起数据竞争。
+
+Send和Sync也是dreived的根据这个结构中的类型是否都实现了Send,Sync.来实现。
+
+内部可变性的Cell（不是线程安全的）和RefCell（线程安全的）常常和Rc（单线程）, Arc（多线程）配合使用。
+
+
+## FINAL CODE
+
+```RUST
+
+#![allow(unused_variables)]
+fn main() {
+use std::rc::Rc;
+
+pub struct List<T> {
+    head: Link<T>,
+}
+
+type Link<T> = Option<Rc<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None }
+    }
+
+    pub fn append(&self, elem: T) -> List<T> {
+        List { head: Some(Rc::new(Node {
+            elem: elem,
+            next: self.head.clone(),
+        }))}
+    }
+
+    pub fn tail(&self) -> List<T> {
+        List { head: self.head.as_ref().and_then(|node| node.next.clone()) }
+    }
+
+    pub fn head(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.elem)
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) }
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut head = self.head.take();
+        while let Some(node) = head {
+            if let Ok(mut node) = Rc::try_unwrap(node) {
+                head = node.next.take();
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+
+    #[test]
+    fn basics() {
+        let list = List::new();
+        assert_eq!(list.head(), None);
+
+        let list = list.append(1).append(2).append(3);
+        assert_eq!(list.head(), Some(&3));
+
+        let list = list.tail();
+        assert_eq!(list.head(), Some(&2));
+
+        let list = list.tail();
+        assert_eq!(list.head(), Some(&1));
+
+        let list = list.tail();
+        assert_eq!(list.head(), None);
+
+        // Make sure empty tail works
+        let list = list.tail();
+        assert_eq!(list.head(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let list = List::new().append(1).append(2).append(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+    }
+}
+}
+
+```
+
+
+# An  Unsafe Singly-Linked Queue
+
+通常使用Refcell会使事情变得很复杂，
+
+这里将会使用原生指针和unsafe rust.
+
+Stack的操作：
+
+因为这里是单链表实现Queue， 对于Stack来说，FIFO的的特性只在一端操作就可以了，但是对于Queue来说，如果是由单链表来实现，Queue的特性是LIFO，所以pop 和 push操作是在两个不同的方向操作的。因此Queue的push和pop当有一端在另一侧是，需要去遍历整个list，在效率上很低。
+
+
+```
+input list:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, None)
+
+stack push X:
+[Some(ptr)] -> (X, Some(ptr)) -> (A, Some(ptr)) -> (B, None)
+
+stack pop:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, None)
+
+```
+Queue的操作:
+
+```
+input list:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, None)
+
+flipped push X:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, Some(ptr)) -> (X, None)
+
+input list:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, Some(ptr)) -> (X, None)
+
+flipped pop:
+[Some(ptr)] -> (A, Some(ptr)) -> (B, None)
+
+```
+
+因此在结构体中是不是可以存放一个引用或者指针去保存一个尾节点的指针呢？
+
+这样是可以的，但是对于Rust来说，存放引用的话，会因为在push或者pop时给自身的结构体中保存了一份可变的引用，这样就会违反借用规则。这样是不可以的。
+
+```rust
+pub struct List<'a, T> {
+    head: Link<T>,
+    tail: Option<&'a mut Node<T>>, // NEW!
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+
+impl<'a, T> List<'a, T> {
+    pub fn new() -> Self {
+        List { head: None, tail: None }
+    }
+
+    pub fn push(&'a mut self, elem: T) {
+        let new_tail = Box::new(Node {
+            elem: elem,
+            // When you push onto the tail, your next is always None
+            next: None,
+        });
+
+        // Put the box in the right place, and then grab a reference to its Node
+        let new_tail = match self.tail.take() {
+            Some(old_tail) => {
+                // If the old tail existed, update it to point to the new tail
+                old_tail.next = Some(new_tail);
+                old_tail.next.as_mut().map(|node| &mut **node)
+            }
+            None => {
+                // Otherwise, update the head to point to it
+                self.head = Some(new_tail);
+                self.head.as_mut().map(|node| &mut **node)
+            }
+        };
+
+        self.tail = new_tail;
+    }
+    pub fn pop(&'a mut self) -> Option<T> {
+        // Grab the list's current head
+        self.head.take().map(|head| {
+            let head = *head;
+            self.head = head.next;
+
+            // If we're out of `head`, make sure to set the tail to `None`.
+            if self.head.is_none() {
+                self.tail = None;
+            }
+
+            head.elem
+        })
+    }
+
+}
+
+mod test {
+    use super::List;
+    #[test]
+    fn basics() {
+        let mut list = List::new();
+
+        // Check empty list behaves right
+        assert_eq!(list.pop(), None);
+
+        // Populate list
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push(4);
+        list.push(5);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), None);
+    }
+}
+
+
+```
+
+```
+cargo test
+
+error[E0499]: cannot borrow `list` as mutable more than once at a time
+  --> src/fifth.rs:68:9
+   |
+65 |         assert_eq!(list.pop(), None);
+   |                    ---- first mutable borrow occurs here
+...
+68 |         list.push(1);
+   |         ^^^^
+   |         |
+   |         second mutable borrow occurs here
+   |         first borrow later used here
+
+error[E0499]: cannot borrow `list` as mutable more than once at a time
+  --> src/fifth.rs:69:9
+   |
+65 |         assert_eq!(list.pop(), None);
+   |                    ---- first mutable borrow occurs here
+...
+69 |         list.push(2);
+   |         ^^^^
+   |         |
+   |         second mutable borrow occurs here
+   |         first borrow later used here
+
+error[E0499]: cannot borrow `list` as mutable more than once at a time
+  --> src/fifth.rs:70:9
+   |
+65 |         assert_eq!(list.pop(), None);
+   |                    ---- first mutable borrow occurs here
+...
+70 |         list.push(3);
+   |         ^^^^
+   |         |
+   |         second mutable borrow occurs here
+   |         first borrow later used here
+
+
+....
+
+** WAY MORE LINES OF ERRORS **
+
+....
+
+error: aborting due to 11 previous errors
+
+```
+
+可以看到的问题出现了，当push时出现了多个可变的借用，这个在rust中是违反了借用规则的。
+
+
+
+所以解决的方式是，存放一个裸指针（原生指针）保存指向尾节点。
+
+```rust
+pub struct List<T> {
+    head: Link<T>,
+    tail: *mut Node<T>, // DANGER DANGER
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+```
+
+## UNSAFE
+
+Rust中原生指针有两种： *const T, *mut T, 对应的就是C中的const T*, T*;
+
+Unsafe 中的一些特性：
+
+## BASIC
+
+
+构造函数发生了变化，因为tail中存放的是原生指针，这里初始化使用的是ptr::null_mut()。
+
+```rust
+use std::ptr;
+
+// defns...
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None, tail: ptr::null_mut() }
+    }
+}
+
+```
+
+这里push的，结构体中tail中存放的是一个原生指针。
+
+
+`let raw_tail: *mut _ = &mut *new_tail;
+`
+引用变为指针操作。
+
+```rust
+pub fn push(&mut self, elem: T) {
+    let mut new_tail = Box::new(Node {
+        elem: elem,
+        next: None,
+    });
+
+    let raw_tail: *mut _ = &mut *new_tail;
+
+    // Put the box in the right place, and then grab a reference to its Node
+    if !self.tail.is_null() {
+        // If the old tail existed, update it to point to the new tail
+        unsafe {
+            // 对于raw pointer操作是不安全的操作，必须放在unsafe 中，通过unsafe 表明这部分操作是不安全的操作
+            (*self.tail).next = Some(new_tail);
+            // 使用raw pointer， 必须手动defer，因为这是一个不安全的操作， 这里还涉及到了运算符的优先级问题
+        }
+    } else {
+        // Otherwise, update the head to point to it
+        self.head = Some(new_tail);
+    }
+
+    self.tail = raw_tail;
+}
+
+pub fn pop(&mut self) -> Option<T> {
+    self.head.take().map(|head| {
+        let head = *head;
+        self.head = head.next;
+
+        if self.head.is_none() {
+            // head为None, 将taill设置为null
+            self.tail = ptr::null_mut();
+        }
+
+        head.elem
+    })
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+    #[test]
+    fn basics() {
+        let mut list = List::new();
+
+        // Check empty list behaves right
+        assert_eq!(list.pop(), None);
+
+        // Populate list
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push(4);
+        list.push(5);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), None);
+
+        // Check the exhaustion case fixed the pointer right
+        list.push(6);
+        list.push(7);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(6));
+        assert_eq!(list.pop(), Some(7));
+        assert_eq!(list.pop(), None);
+    }
+}
+
+```
+
+对于迭代是完全可以复用过来的
+
+```rust
+// ...
+
+pub struct IntoIter<T>(List<T>);
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+
+
+
+impl<T> List<T> {
+    // ...
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| {
+            &node.elem
+        })
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| {
+            &mut node.elem
+        })
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut { next: self.head.as_mut().map(|node| &mut **node) }
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur_link = self.head.take();
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = boxed_node.next.take();
+        }
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_mut().map(|node| &mut **node);
+            &mut node.elem
+        })
+    }
+}
+
+
+
+
+
+#[cfg(test)]
+mod test {
+    // ...
+
+    #[test]
+    fn into_iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter_mut();
+        assert_eq!(iter.next(), Some(&mut 1));
+        assert_eq!(iter.next(), Some(&mut 2));
+        assert_eq!(iter.next(), Some(&mut 3));
+        assert_eq!(iter.next(), None);
+    }
+}
+
+
+```
+
+## FINAL CODE 
+
+```rust
+#![allow(unused_variables)]
+fn main() {
+use std::ptr;
+
+pub struct List<T> {
+    head: Link<T>,
+    tail: *mut Node<T>,
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None, tail: ptr::null_mut() }
+    }
+
+    pub fn push(&mut self, elem: T) {
+        let mut new_tail = Box::new(Node {
+            elem: elem,
+            next: None,
+        });
+
+        let raw_tail: *mut _ = &mut *new_tail;
+
+        if !self.tail.is_null() {
+            unsafe {
+                (*self.tail).next = Some(new_tail);
+            }
+        } else {
+            self.head = Some(new_tail);
+        }
+
+        self.tail = raw_tail;
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        self.head.take().map(|head| {
+            let head = *head;
+            self.head = head.next;
+
+            if self.head.is_none() {
+                self.tail = ptr::null_mut();
+            }
+
+            head.elem
+        })
+    }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| {
+            &node.elem
+        })
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| {
+            &mut node.elem
+        })
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter { next: self.head.as_ref().map(|node| &**node) }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut { next: self.head.as_mut().map(|node| &mut **node) }
+    }
+}
+
+pub struct IntoIter<T>(List<T>);
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur_link = self.head.take();
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = boxed_node.next.take();
+        }
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_mut().map(|node| &mut **node);
+            &mut node.elem
+        })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+    #[test]
+    fn basics() {
+        let mut list = List::new();
+
+        // Check empty list behaves right
+        assert_eq!(list.pop(), None);
+
+        // Populate list
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push(4);
+        list.push(5);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), None);
+
+        // Check the exhaustion case fixed the pointer right
+        list.push(6);
+        list.push(7);
+
+        // Check normal removal
+        assert_eq!(list.pop(), Some(6));
+        assert_eq!(list.pop(), Some(7));
+        assert_eq!(list.pop(), None);
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut list = List::new();
+        list.push(1); list.push(2); list.push(3);
+
+        let mut iter = list.iter_mut();
+        assert_eq!(iter.next(), Some(&mut 1));
+        assert_eq!(iter.next(), Some(&mut 2));
+        assert_eq!(iter.next(), Some(&mut 3));
+        assert_eq!(iter.next(), None);
+    }
+}
+}
+```
+
+
+
+# The Double Single 
+
+对于双向链表，因为rust拥有严格的所有权，所以没有一个节点严格的拥有其他节点。
+
+现在把一个链表一份为2，一部分在左边，一部分在右边。
+
+每一边是一个栈，这样列表可以向左或者向右增加，方法是压栈操作。我可以遍历这个list，从一段弹出值到另一端。
+
+```rust
+
+pub struct Stack<T> {
+    head: Link<T>,
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+}
+
+impl<T> Stack<T> {
+    pub fn new() -> Self {
+        Stack { head: None }
+    }
+
+    // pub fn push(&mut self, elem: T) {
+    //     let new_node = Box::new(Node {
+    //         elem: elem,
+    //         next: self.head.take(),
+    //     });
+
+    //     self.head = Some(new_node);
+    // }
+    pub fn push(&mut self, elem: T){
+        let new_node = Box::new(Node {
+            elem,
+            next: None,
+        });
+
+        self.push_node(new_node);
+    }
+
+    pub fn push_node(&mut self, mut node : Box<Node<T>>){
+        node.next = self.head.take();
+        self.head = Some(node);
+    }
+
+    // pub fn pop(&mut self) -> Option<T> {
+    //     self.head.take().map(|node| {
+    //         let node = *node;
+    //         self.head = node.next;
+    //         node.elem
+    //     })
+    // }
+
+    pub fn pop(&mut self) -> Option<T> {
+        self.pop_node().map(|node|{
+            node.elem
+        })
+    }
+
+    pub fn pop_node(&mut self) -> Option<Box<Node<T>>> {
+        self.head.take().map(|mut node |{
+            self.head = node.next.take();
+            node
+        })
+    }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| {
+            &node.elem
+        })
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| {
+            &mut node.elem
+        })
+    }
+}
+
+impl<T> Drop for Stack<T> {
+    fn drop(&mut self) {
+        let mut cur_link = self.head.take();
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = boxed_node.next.take();
+        }
+    }
+}
+
+
+pub struct List<T> {
+    left: Stack<T>,
+    right: Stack<T>,
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        Self {
+            left: Stack::new(), 
+            right: Stack::new(),
+        }
+    }
+    
+    pub fn push_left(&mut self, elem: T){
+        self.left.push(elem)
+    }
+    pub fn push_right(&mut self, elem: T){
+        self.right.push(elem)
+    }
+    pub fn pop_left(&mut self) -> Option<T> {
+        self.left.pop()
+    }
+    pub fn pop_right(&mut self) -> Option<T> {
+        self.right.pop()
+    }
+    pub fn peek_left(&mut self) -> Option<&T> {
+        self.left.peek()
+    }
+    pub fn peek_right(&mut self) -> Option<&T> {
+        self.right.peek()
+    }
+    pub fn peek_left_mut(&mut self) -> Option<&mut T> {
+        self.left.peek_mut()
+    }
+    pub fn peek_right_mut(&mut self) -> Option<&mut T> {
+        self.right.peek_mut()
+    }
+
+    pub fn go_left(&mut self) -> bool {
+        self.left.pop_node().map(|node|{
+            self.right.push_node(node);
+        }).is_some()
+    }
+
+    pun fn go_right(&mut slef) -> bool {
+        self.rigth.pop_node().map(|node|{
+            self.left.push_node(node);
+        }).is_some()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+
+    #[test]
+    fn walk_aboot() {
+        let mut list = List::new();             // [_]
+
+        list.push_left(0);                      // [0,_]
+        list.push_right(1);                     // [0, _, 1]
+        assert_eq!(list.peek_left(), Some(&0));
+        assert_eq!(list.peek_right(), Some(&1));
+
+        list.push_left(2);                      // [0, 2, _, 1]
+        list.push_left(3);                      // [0, 2, 3, _, 1]
+        list.push_right(4);                     // [0, 2, 3, _, 4, 1]
+
+        while list.go_left() {}                 // [_, 0, 2, 3, 4, 1]
+
+        assert_eq!(list.pop_left(), None);
+        assert_eq!(list.pop_right(), Some(0));  // [_, 2, 3, 4, 1]
+        assert_eq!(list.pop_right(), Some(2));  // [_, 3, 4, 1]
+
+        list.push_left(5);                      // [5, _, 3, 4, 1]
+        assert_eq!(list.pop_right(), Some(3));  // [5, _, 4, 1]
+        assert_eq!(list.pop_left(), Some(5));   // [_, 4, 1]
+        assert_eq!(list.pop_right(), Some(4));  // [_, 1]
+        assert_eq!(list.pop_right(), Some(1));  // [_]
+
+        assert_eq!(list.pop_right(), None);
+        assert_eq!(list.pop_left(), None);
+
+    }
+}
+```
+
 
 
 
