@@ -2420,6 +2420,504 @@ mod test {
 ```
 
 
+# A Bad but Safe Doubly - Linked Deque
+
+通过Rc和 RefCell的内部可变性实现一个双向链表
+
+RefCell中的核心方法：
+
+```rust
+fn borrow(&self) -> Ref<'_, T>;
+fn borrow_mut(&self) -> RefMut<'_, T>;
+```
+
+可以将borrow和borrow_mut的借用规则和&T, &mut T的规则是一样的，只不过RefCell是在运行时做借用检查。出现问题是会直接panic!
+
+由于实现的是双向链表，因此每一个节点中都有一个指向上一个节点和下一个节点的指针。
+
+```rust
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub struct List<T> {
+    head: Link<T>,
+    tail: Link<T>,
+}
+
+type Link<T> = Option<Rc<RefCell<Node<T>>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+    prev: Link<T>,
+}
+
+impl<T> Node<T> {
+    fn new(elem: T) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Node {
+            elem: elem,
+            prev: None,
+            next: None,
+        }))
+    }
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None, tail: None }
+    }
+
+    pub fn push_front(&mut self, elem: T) {
+        let new_head = Node::new(elem);
+        match self.head.take() {
+            Some(old_head) => {
+                //这里使用了borrow_mut(),因为Rc中存放的是RefCell<Node<T>>
+                old_head.borrow_mut().prev = Some(new_head.clone());
+                new_head.borrow_mut().next = Some(old_head);
+                self.head = Some(new_head);
+            }
+            None => {
+                self.tail = Some(new_head.clone());
+                self.head = Some(new_head);
+            }
+        }
+    }
+}
+
+
+```
+
+RefCell是在运行时做借用检查的，
+RefCell是可共享的可变容器
+
+
+## Breaking Down
+
+pop_front 应该和push_front的基本逻辑是相同的，但是backwards
+
+```rust
+impl <T> List<T> {
+    pub fn pop_front(&mut self) -> Option<T> {
+        // need to take the old head, ensuring it's -2
+        self.head.take().map(|old_head| { // -1 old
+            match old_head.borrow_mut().next.take() {
+                Some(new_head) => { // -1 new
+                    // not emptying list 
+                    new_head.borrow_mut().prev.take(); // -1 old
+                    self.head = Some(new_head); // +1 new
+                    // total: -2 old, +0 new
+                },
+                None => {
+                    // emptyhing list
+                    self.tail.take(); // -1 old
+                    // total: -2 old, +0 new
+                }   
+            }   
+            old_head.elem
+        })
+    }
+
+}
+```
+
+```
+> cargo build
+
+error[E0609]: no field `elem` on type `std::rc::Rc<std::cell::RefCell<fourth::Node<T>>>`
+  --> src/fourth.rs:64:22
+   |
+64 |             old_head.elem
+   |                      ^^^^ unknown field
+
+```
+
+通过borrow_mut 操作下
+
+```rust
+
+pub fn pop_front(&mut self) -> Option<T> {
+    self.head.take().map(|old_head| {
+        match old_head.borrow_mut().next.take() {
+            Some(new_head) => {
+                new_head.borrow_mut().prev.take();
+                self.head = Some(new_head);
+            }
+            None => {
+                self.tail.take();
+            }
+        }
+        old_head.borrow_mut().elem
+    })
+}
+
+```
+
+```
+cargo build
+
+error[E0507]: cannot move out of borrowed content
+  --> src/fourth.rs:64:13
+   |
+64 |             old_head.borrow_mut().elem
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot move out of borrowed content
+
+```
+
+borrow_mut只能给我们一个&mut Node<T>, 但是we can't move out of that!
+
+我们需要一个可以接受RefCell<T>并且可以给我们一个T的东西
+
+`fn into_inner(self) -> T`
+
+consumes the RefCell, return the wrapped value
+
+old_head.into_inner().elem
+
+```
+> cargo build
+
+error[E0507]: cannot move out of an `Rc`
+  --> src/fourth.rs:64:13
+   |
+64 |             old_head.into_inner().elem
+   |             ^^^^^^^^ cannot move out of an `Rc`
+
+```
+
+我们想要移出RefCell， 但是我们不能因为他在一个Rc中， 
+正如我们在前一章看到的，Rc<T>指允许我们将共享引用引入到他的内部。 that's the whole point of the reference counted pointed : They're shared!
+Rc<T> only lets us get shared references into its internals.
+
+This was a problem for us when we wanted to implement Drop for our reference counted list, and the solution is the same:
+ Rc::try_unwrap, which moves out the contents of an Rc if its refcount is 1.
+ 
+ Rc::try_unwrap(old_head).unwrap().into_inner().elem
+ 
+ Rc::try_unwrap 将返回 Result<T, Rc<T>> , Result are basically a generalized Option, where None case has data associated with it
+ 在种种情况下，当你试图unwrap时，由于我们不关系它的失败情况。我们就只调用unwrap、
+ 
+ ```
+> cargo build
+
+error[E0599]: no method named `unwrap` found for type `std::result::Result<std::cell::RefCell<fourth::Node<T>>, std::rc::Rc<std::cell::RefCell<fourth::Node<T>>>>` in the current scope
+  --> src/fourth.rs:64:38
+   |
+64 |             Rc::try_unwrap(old_head).unwrap().into_inner().elem
+   |                                      ^^^^^^
+   |
+   = note: the method `unwrap` exists but the following trait bounds were not satisfied:
+           `std::rc::Rc<std::cell::RefCell<fourth::Node<T>>> : std::fmt::Debug`
+
+```
+
+unwrap On Result 需要你 debug-print error case, RefCell<T> only implements Debug if T does. 
+Node doesn't implement Debug.
+
+不如让我们通过将Reuslt变成一个Option的OK
+
+Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
+
+```rust
+
+#[cfg(test)]
+mod test{
+    use super::List;
+    
+    #[test]
+    fn basic() {
+        let mut list = List::new();
+        
+        // check empty list behaves right
+        assert_eq!(list.pop_front(), None);
+        
+        // populate list 
+        list.push_front(1);
+        list.push_front(2);
+        list.push_front(3);
+        
+        // check normal removal
+        
+        assert_eq!(list.pop_front(), Some(3));
+        assert_eq!(list.pop_front(), Some(2));
+        
+        //push some more just to make sure nothing's corrupted
+        list.push_front(4);
+        list.push_front(5);
+        
+        //check normal removal
+        assert_eq!(list.pop_front(), Some(5));
+        assert_eq!(list.pop_front(), Some(4));
+    
+        //check exhaustion
+        assert_eq!(list.pop_front(), Some(1));
+        assert_eq!(list.pop_front(), None);
+    }   
+}
+```
+现在我们可以正确地从列表中删除一些东西，我们可以实现Drop, 这次Drop在概念上更有缺一些，以前我们为了避免无线递归而为Drop， 现在我们需要实现爱内Drop
+来实现任何事情。
+
+Rc不能处理循环，如果我们有一个循环，所有的东西都活保持alive, 事实证明， 一个双向链表实际一个由小循环组成的大链。 当我们删除我们的链表时，
+两个末端节点refcount decremented down to 1，然后什么也不会发生。如果我们的列表只包含一个节点，我就可以开始了。但是理想情况下，如果列表包含多个元素，那么他就应该
+正常工作。
+
+正如我们所看到的，删除元素有点痛苦。所以对我们来说最简单的事情就是pop，知道我们得到None
+
+```rust
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        while self.pop_front().is_some() {}
+    }
+}
+```
+
+
+
+
+## FINAL CODE
+
+
+```rust
+
+#![allow(unused_variables)]
+fn main() {
+use std::rc::Rc;
+use std::cell::{Ref, RefMut, RefCell};
+
+pub struct List<T> {
+    head: Link<T>,
+    tail: Link<T>,
+}
+
+type Link<T> = Option<Rc<RefCell<Node<T>>>>;
+
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
+    prev: Link<T>,
+}
+
+
+impl<T> Node<T> {
+    fn new(elem: T) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Node {
+            elem: elem,
+            prev: None,
+            next: None,
+        }))
+    }
+}
+
+impl<T> List<T> {
+    pub fn new() -> Self {
+        List { head: None, tail: None }
+    }
+
+    pub fn push_front(&mut self, elem: T) {
+        let new_head = Node::new(elem);
+        match self.head.take() {
+            Some(old_head) => {
+                old_head.borrow_mut().prev = Some(new_head.clone());
+                new_head.borrow_mut().next = Some(old_head);
+                self.head = Some(new_head);
+            }
+            None => {
+                self.tail = Some(new_head.clone());
+                self.head = Some(new_head);
+            }
+        }
+    }
+
+    pub fn push_back(&mut self, elem: T) {
+        let new_tail = Node::new(elem);
+        match self.tail.take() {
+            Some(old_tail) => {
+                old_tail.borrow_mut().next = Some(new_tail.clone());
+                new_tail.borrow_mut().prev = Some(old_tail);
+                self.tail = Some(new_tail);
+            }
+            None => {
+                self.head = Some(new_tail.clone());
+                self.tail = Some(new_tail);
+            }
+        }
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.tail.take().map(|old_tail| {
+            match old_tail.borrow_mut().prev.take() {
+                Some(new_tail) => {
+                    new_tail.borrow_mut().next.take();
+                    self.tail = Some(new_tail);
+                }
+                None => {
+                    self.head.take();
+                }
+            }
+            Rc::try_unwrap(old_tail).ok().unwrap().into_inner().elem
+        })
+    }
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        self.head.take().map(|old_head| {
+            match old_head.borrow_mut().next.take() {
+                Some(new_head) => {
+                    new_head.borrow_mut().prev.take();
+                    self.head = Some(new_head);
+                }
+                None => {
+                    self.tail.take();
+                }
+            }
+            Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
+        })
+    }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head.as_ref().map(|node| {
+            Ref::map(node.borrow(), |node| &node.elem)
+        })
+    }
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail.as_ref().map(|node| {
+            Ref::map(node.borrow(), |node| &node.elem)
+        })
+    }
+
+    pub fn peek_back_mut(&mut self) -> Option<RefMut<T>> {
+        self.tail.as_ref().map(|node| {
+            RefMut::map(node.borrow_mut(), |node| &mut node.elem)
+        })
+    }
+
+    pub fn peek_front_mut(&mut self) -> Option<RefMut<T>> {
+        self.head.as_ref().map(|node| {
+            RefMut::map(node.borrow_mut(), |node| &mut node.elem)
+        })
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        while self.pop_front().is_some() {}
+    }
+}
+
+pub struct IntoIter<T>(List<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        self.0.pop_front()
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<T> {
+        self.0.pop_back()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::List;
+
+    #[test]
+    fn basics() {
+        let mut list = List::new();
+
+        // Check empty list behaves right
+        assert_eq!(list.pop_front(), None);
+
+        // Populate list
+        list.push_front(1);
+        list.push_front(2);
+        list.push_front(3);
+
+        // Check normal removal
+        assert_eq!(list.pop_front(), Some(3));
+        assert_eq!(list.pop_front(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push_front(4);
+        list.push_front(5);
+
+        // Check normal removal
+        assert_eq!(list.pop_front(), Some(5));
+        assert_eq!(list.pop_front(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop_front(), Some(1));
+        assert_eq!(list.pop_front(), None);
+
+        // ---- back -----
+
+        // Check empty list behaves right
+        assert_eq!(list.pop_back(), None);
+
+        // Populate list
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+
+        // Check normal removal
+        assert_eq!(list.pop_back(), Some(3));
+        assert_eq!(list.pop_back(), Some(2));
+
+        // Push some more just to make sure nothing's corrupted
+        list.push_back(4);
+        list.push_back(5);
+
+        // Check normal removal
+        assert_eq!(list.pop_back(), Some(5));
+        assert_eq!(list.pop_back(), Some(4));
+
+        // Check exhaustion
+        assert_eq!(list.pop_back(), Some(1));
+        assert_eq!(list.pop_back(), None);
+    }
+
+    #[test]
+    fn peek() {
+        let mut list = List::new();
+        assert!(list.peek_front().is_none());
+        assert!(list.peek_back().is_none());
+        assert!(list.peek_front_mut().is_none());
+        assert!(list.peek_back_mut().is_none());
+
+        list.push_front(1); list.push_front(2); list.push_front(3);
+
+        assert_eq!(&*list.peek_front().unwrap(), &3);
+        assert_eq!(&mut *list.peek_front_mut().unwrap(), &mut 3);
+        assert_eq!(&*list.peek_back().unwrap(), &1);
+        assert_eq!(&mut *list.peek_back_mut().unwrap(), &mut 1);
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut list = List::new();
+        list.push_front(1); list.push_front(2); list.push_front(3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next_back(), Some(1));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next_back(), None);
+        assert_eq!(iter.next(), None);
+    }
+}
+}
+```
+
+
+
+
 
 # The Double Single 
 
