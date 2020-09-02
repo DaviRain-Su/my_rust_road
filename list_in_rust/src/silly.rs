@@ -123,7 +123,7 @@ pub struct List<T> {
 }
 
 impl <T> List<T> {
-    fn new() -> Self{
+    pub fn new() -> Self{
         Self{
             left: Stack::new(),
             right: Stack::new(),
