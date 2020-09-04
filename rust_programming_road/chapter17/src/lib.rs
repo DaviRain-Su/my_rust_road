@@ -487,6 +487,12 @@ pub fn triat_object_safe() {
 /// approve方法与request_review方法类似，他会执行状态的审批流程，并将state设置
 /// 为当前状态审批后返回的值。
 /// 
+/// ## 状态模式的权衡取舍
+/// 
+/// 基于状态模式，我们可以免于在Post的方法调用或使用Post的代码中添加match表达式。
+/// 当业务需要新增状态时，我们也只需要创建一个新的结构体并为他实现trait的各种方法即可。
+/// 
+/// 
 ///  
 pub struct Post {
     state: Option<Box<dyn State>>, //state用于存放状态，这里需要去做状态的转换
@@ -506,8 +512,14 @@ impl Post {
     }
 
     //该方法不依赖与文章当前所处的状态，所以他不是状态模式的一部分。
+    // pub fn add_text(&mut self, text: &str) {
+    //     self.content.push_str(text);
+    // }
     pub fn add_text(&mut self, text: &str) {
-        self.content.push_str(text);
+        // self.state.take().unwrap().add_text(&mut self, text);
+        if let Some(s) = self.state.take(){
+            self.state  = Some(s.add_text(self, text)); // ?? 为什么是self, 而不是&mut self 
+        }
     }
 
     pub fn request_review(&mut self) {
@@ -545,6 +557,12 @@ impl Post {
     pub fn content(&self) -> &str {
         self.state.as_ref().unwrap().content(&self)
     }
+
+    pub fn reject(&mut self) {
+        if let Some(s) = self.state.take(){
+            self.state = Some(s.reject());
+        }
+    }
 }
 
 /// 接口，不同的状态需要去实现这个State trait
@@ -563,6 +581,9 @@ trait State {
     fn content<'a>(&self, _post: &'a Post) -> &'a str{
         ""
     }
+    fn reject(self: Box<Self>) -> Box<dyn State>;
+
+    fn add_text(self : Box<Self>, _post: &mut Post, _text: &str) -> Box<dyn State>;
 }
 
 /// 草稿状态
@@ -591,6 +612,18 @@ impl State for Draft {
     }
 
     // 这里Draft也实现了content只不过这里是默认的实现方式
+
+    fn reject(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+
+    // fn add_text<'a>(&self, post: &'a mut Post, text: &str) -> Box<dyn State>{
+        // post.content.push_str(text)
+    // }
+    fn add_text(self : Box<Self>, _post: &mut Post, _text: &str) -> Box<dyn State> {
+        _post.content.push_str(_text);
+        self
+    }
 }
 
 struct PendingReview{}
@@ -608,6 +641,13 @@ impl State for PendingReview {
     }
 
     // 这里PendingReview也实现了content只不过这里是默认的实现方式
+    fn reject(self: Box<Self>) -> Box<dyn State> {
+        Box::new(Draft{})
+    }
+
+    fn add_text(self : Box<Self>, _post: & mut Post, _text: &str) -> Box<dyn State> {
+        self
+    }
 }
 
 
@@ -626,6 +666,12 @@ impl State for Published {
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         &post.content
     }
+    fn reject(self: Box<Self>) -> Box<dyn State> {
+        self
+    }
+    fn add_text(self : Box<Self>, _post: & mut Post, _text: &str) -> Box<dyn State> {
+        self
+    }
 }
 #[test]
 fn exmaple(){
@@ -635,16 +681,22 @@ fn exmaple(){
 
     // 此时出于草稿状态， 可以添加文字，到那时不能获取到文章的内容
     post.add_text("I ate a salad for lunch today");
+    post.add_text("1234567890");
     assert_eq!("", post.content());
 
     // 此时是一个状态的转换，从草稿状态转换为审批状态， 此时已然无法获得内容
     post.request_review();
+    post.add_text("I ate a salad for lunch today");
     assert_eq!("", post.content());
+
+    // post.reject();
+    // assert_eq!("", post.content());
 
     // 此时是一个状态的转换，从审批状态到发布状态，此时可以获得文章的内容
     post.approve();
-    assert_eq!("I ate a salad for lunch today", post.content());
-
+    // post.approve();
+    assert_eq!("I ate a salad for lunch today1234567890", post.content());
+    // assert_eq!("", post.content());
     //-----------implement blog post -------------------------------
 
 }
