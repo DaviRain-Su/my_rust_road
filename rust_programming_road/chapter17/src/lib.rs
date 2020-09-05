@@ -492,7 +492,16 @@ pub fn triat_object_safe() {
 /// 基于状态模式，我们可以免于在Post的方法调用或使用Post的代码中添加match表达式。
 /// 当业务需要新增状态时，我们也只需要创建一个新的结构体并为他实现trait的各种方法即可。
 /// 
+/// 状态模式的缺点：
 /// 
+/// 1. 因为状态实现爱内了状态间的转移，所以某些状态之间是相互耦合的。如果我们希望在PendingReview和
+/// published 之间添加一个Scheduled状态，那么我们就需要修改PendingReview中的代码来转移到
+/// Scheduled状态。
+/// 
+/// 2. 我们需要重复的实现一些代码逻辑。你也会会试着提供模式实现，让State trait和request_review和approve 方法
+/// 默认返回self，但这样的代码违背了对象安全的原则，因为triat无法确定self的具体类型
+/// 究竟是什么。如果我们希望将State当作trait对象来使用，那么它的方法就必须全部是对象安全的。
+///  
 ///  
 pub struct Post {
     state: Option<Box<dyn State>>, //state用于存放状态，这里需要去做状态的转换
@@ -699,4 +708,104 @@ fn exmaple(){
     // assert_eq!("", post.content());
     //-----------implement blog post -------------------------------
 
+}
+
+
+/// # 将状态和行为编码成类型
+/// 
+/// 这里将状态编码为类型，而不是完全封装状态与转移过程以使外部对其一无所知。
+/// 结果，Rust的类型检查系统将会通过编译时错误来阻止用户使用无效的状态，比如在需要
+/// 使用已发布文章的场合误用处于草稿状态的文章。
+/// 
+/// 
+/// 我们仍然希望通过Post::new 来创建出状态为草稿的新文章，并保留向文章
+/// 中添加内容的能力。但我们不是让草稿的content方法返回一个空字符串。而是根本
+/// 不会为草稿提供content方法。基于这样的设计，用户会在试图读取草稿内容时得到的方法不存在的编译
+/// 错误。这使得我们不可能在产品中意外暴露出草稿内容，因为这样的代码连编译都无法通过。
+/// 
+/// 
+/// ## 将状态转移实现为不同类型之间的转换
+///  
+/// 
+/// 仍然希望一篇草稿状态的文章能够在得到审批后发布，而一篇处于待审批状态的文章
+/// 则不应该对外显示任何内容。
+/// 
+/// 由于request_review和approve方法获取了self的所有权，所以他会消耗DraftPost和
+/// PendingReviewPost实例，并分别将自己转换为PendingReviewPost和已发布的Post。
+/// 
+/// 
+/// 
+/// # 总结
+/// 
+/// 使用trait对象来实现部分面向对象的特性。
+/// 
+/// 动态派发通过牺牲些许的运行时能赋予代码更多的灵活性。
+/// 可以利用这种灵活性来实现有助于改善代码可维护性的面向对象模式
+/// 
+/// 由于Rust具有所有权等其他面向对象语言没有的特性，所以面向对象的模式
+/// 仅仅是一种可用的选项。而并不总是最佳的实现方式。
+/// 
+/// 
+pub mod test1 { 
+    #[test]
+    fn basic(){
+        let mut post = Post::new();
+        
+        post.add_text("I ate a salad for lunch today");
+        // assert_eq!("", post.content()); // error , DraftPost no content method 
+        
+        let post = post.request_review();
+        
+        let post = post.approve();
+
+        assert_eq!("I ate a salad for lunch today", post.content());
+    }
+
+    /// 这里将状态编码为了结构体类型，所以这两个结构体不再拥有之前的state字段
+    /// 新的Post 结构体将会代表一篇已发布的文章，它的content方法被用来返回内部content字段的值
+    /// 
+    pub struct Post {
+        content : String,
+    }
+    pub struct DraftPost {
+        content : String,
+    }
+    pub struct PendingReviewPost {
+        content: String,
+    }
+
+    impl Post {
+        /// 定义了关联函数new， 但是返回的是一个DratPost实例，而不再是Post实例
+        /// 
+        /// 没有任何直接返回Post的函数，所以我们暂时无法创建出Post实例。
+        ///  
+        pub fn new() -> DraftPost {
+            DraftPost {
+                content: String::new(),
+            }
+        }
+
+        pub fn content(&self) -> &str {
+            &self.content
+        }
+    }
+    /// 由于DraftPsot的content字段是私有的。
+    impl DraftPost {
+        pub fn add_text(&mut self, text: &str) {
+            self.content.push_str(text);
+        }
+        pub fn request_review(self) -> PendingReviewPost {
+            PendingReviewPost {
+                content: self.content,
+            }
+        }
+    }
+
+    impl PendingReviewPost {
+        pub fn approve(self) -> Post {
+            Post {
+                content: self.content,
+            }
+        }
+    }
 }
