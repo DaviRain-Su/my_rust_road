@@ -126,3 +126,112 @@ pub fn example() {
 
 
 pub mod color;
+
+/// # 枚举体
+/// 
+/// ## 代数数据类型之和类型
+/// 
+/// 枚举体属于代数数据类型中的和类型。
+///  
+/// 和类型可以借助加法原理来理解
+/// 
+/// 积类型表示逻辑与（合取），和类型就表示逻辑或（析取）。
+/// 
+/// Rust中用来消除空指针的Option<T>类型就是一种典型的枚举体
+/// Option<T>，代表有和无之和，将两种不同的类型构造为一种新的符合类型。 
+/// 
+/// 和结构体不同的是，枚举体中的成员是值，而非类型，一般把他们叫做**变体**, 
+/// 使用枚举可以更方便地实现多态。
+/// 
+/// 重构之前的Colr
+/// 
+/// - 使用枚举体来管理颜色，而不是直接在具体地方法中使用颜色代码
+/// - 使用模式匹配代替if来确认结构体中的fgcolor和bgcolor的设置情况
+/// - 可以支持字符串设置颜色
+/// 
+///  
+mod enum_color{
+    
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    enum Color {
+        Red,
+        Yellow,
+        Blue,
+    }
+
+    impl  Color {
+        fn to_fg_str(&self) -> &str { // 前景色ANSI码的获得
+            match *self { // 这里的*self 并不会转移所有权
+                Color::Red => "31",
+                Color::Yellow => "33",
+                Color::Blue => "34",
+            }
+        }
+        fn to_bg_str(&self) -> &str { // 背景色ANSI码的获得
+            match *self {
+                Color::Red => "41",
+                Color::Yellow => "43",
+                Color::Blue => "44",
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct ColoredString {
+        input: String,
+        fgcolor: Option<Color>,
+        bgcolor: Option<Color>,
+    }
+
+    impl  Default for ColoredString {
+        fn default() -> Self {
+            ColoredString {
+                input: String::default(),
+                fgcolor: None,
+                bgcolor: None,
+            }
+        }
+    }
+
+    // 为Color实现From, 用于将&str, String类型的字符串转换为Color，
+    // 这样做是为了实现通过字符串来设置颜色的需求。
+    //
+    // 要实现From,需要显式地导入std::convert::From,std::str::FromStr,
+    // 和std::string::String, 
+    use std::convert::From;
+    use std::str::FromStr;
+    use std::string::String;
+
+    impl<'a> From<&'a str> for Color {
+        fn from(src: &str) -> Self {
+            // 这里用到的prase方法，该方法要求目标类型必须实现FromStr, 
+            // 所以后面才有了为Color实现FromStr了
+            // parase方法会返回Result类型, 如果是Ok<T>类型，则会通过
+            // unwrap来获取其中的值，如果是Err<T>类型，则返回指定的默认值Color:Red
+            src.parse().unwrap_or(Color::Red)
+        }
+    }
+    impl From<String> for Color {
+        fn from(src: String) -> Self {
+            src.parse().unwrap_or(Color::Red)
+        }
+    } 
+
+    // 这是因为parse需要
+    impl FromStr for Color {
+        type Err = ();
+        fn from_str(src: &str) -> Result<Self, Self::Err> {
+            let src = src.to_lowercase();
+            match src.as_ref() {
+                "red" => Ok(Color::Red),
+                "yellow" => Ok(Color::Yellow),
+                "blue" => Ok(Color::Blue),
+                _ => Err(()),
+            }
+        }
+    }
+    #[test]
+    fn basic() {
+
+    }
+}
