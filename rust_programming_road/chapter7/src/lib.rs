@@ -377,5 +377,8 @@ mod enum_color{
 
         let yellow = "yellow".on_color("yellow");
         println!("{}", yellow);
+
+        let red = "hello, world".on_color(String::from("red"));
+        println!("{}", red);
     }
 }
