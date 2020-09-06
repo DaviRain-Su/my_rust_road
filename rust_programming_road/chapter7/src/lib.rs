@@ -230,8 +230,152 @@ mod enum_color{
             }
         }
     }
+
+    // 增减了color, on_color方法，使用这两个方法，就可以通过字符串来设置终端文本的颜色
+    // color, on_color泛型方法中使用了triat限定<S: Into<Color>>, 这是因为
+    // Color实现了From, 所以对于String, &'a str 类型字符串均可通过into方法
+    // 转换为Color. 
+    trait Colorize {
+        fn red(self) -> ColoredString;
+        fn yellow(self) -> ColoredString;
+        fn blue(self) -> ColoredString;
+        fn color<S: Into<Color>>(self, color: S) -> ColoredString;
+        fn on_red(self) -> ColoredString;
+        fn on_yellow(self) -> ColoredString;
+        fn on_blue(self) -> ColoredString;
+        fn on_color<S: Into<Color>>(self, color: S) -> ColoredString;
+    }
+
+    impl Colorize for ColoredString {
+        fn red(self) -> ColoredString {
+            self.color(Color::Red)
+        }
+        fn yellow(self) -> ColoredString {
+            self.color(Color::Yellow)
+        }
+        fn  blue(self) -> ColoredString {
+            self.color(Color::Blue)
+        }
+
+        fn color<S: Into<Color>>(self, color: S) -> ColoredString {
+            ColoredString {
+                fgcolor: Some(color.into()),
+                ..self
+            }
+        }
+        fn on_red(self) -> ColoredString {
+            self.on_color(Color::Red)
+        }
+        fn on_yellow(self) -> ColoredString {
+            self.on_color(Color::Yellow)
+        }
+        fn on_blue(self) -> ColoredString {
+            self.on_color(Color::Blue)
+        }
+        fn on_color<S: Into<Color>>(self, color: S) -> ColoredString {
+            ColoredString {
+                bgcolor: Some(color.into()),
+                ..self
+            }
+        }
+    }
+
+    impl <'a> Colorize for &'a str {
+        fn red(self) -> ColoredString {
+            self.color(Color::Red)
+        }
+        fn yellow(self) -> ColoredString {
+            self.color(Color::Yellow)
+        }
+        fn  blue(self) -> ColoredString {
+            self.color(Color::Blue)
+        }
+
+        fn color<S: Into<Color>>(self, color: S) -> ColoredString {
+            ColoredString {
+                fgcolor: Some(color.into()),
+                input: String::from(self),
+                ..ColoredString::default()
+            }
+        }
+        fn on_red(self) -> ColoredString {
+            self.on_color(Color::Red)
+        }
+        fn on_yellow(self) -> ColoredString {
+            self.on_color(Color::Yellow)
+        }
+        fn on_blue(self) -> ColoredString {
+            self.on_color(Color::Blue)
+        }
+        fn on_color<S: Into<Color>>(self, color: S) -> ColoredString {
+            ColoredString {
+                bgcolor: Some(color.into()),
+                input: String::from(self),
+                ..ColoredString::default()
+            }
+        } 
+    }
+
+    impl ColoredString {
+        fn compute_style(&self) -> String {
+            let mut res = String::from("\x1B[");
+            let mut has_wrote = false;
+            if let Some(ref bgcolor) = self.bgcolor {
+                res.push_str(bgcolor.to_bg_str());
+                has_wrote = true;
+            }
+            
+            if let Some(ref fgcolor)  = self.fgcolor {
+                if has_wrote { res.push(';'); }
+                res.push_str(fgcolor.to_fg_str())
+            }
+
+            res.push('m');
+            res 
+        }
+    }
+
+    use std::fmt;
+    impl fmt::Display for ColoredString  {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let input = &self.input.clone(); // Copy ColoredString 中记录的input字段
+            f.write_str(&self.compute_style())?; // write_str,用于将指定的数据记录到底层的缓冲区中
+            f.write_str(input)?;
+            f.write_str("\x1B[0m")?;
+            Ok(())
+        }
+    }
+
+
     #[test]
     fn basic() {
+    //     #[derive(Debug)]
+    //     enum A {
+    //         name,
+    //         location(String),
+    //     }
 
+    //     let a = A::location(String::from("hello, world"));
+    //     match a {
+    //         A::name => println!("Name!!"),
+    //         A::location(ref s) => println!("lication {}", s),
+    //     }
+    //     println!("a = {:?}", a);
+
+
+        let red = "red".red();
+        println!("{}", red);
+
+        let yellow = "yellow".yellow().on_blue();
+        println!("{}", yellow);
+        
+        let blue = "blue".blue();
+        println!("{}", blue);
+
+        let red = "red".color("red");
+        println!("{}", red);
+
+        let yellow = "yellow".on_color("yellow");
+        println!("{}", yellow);
     }
 }
