@@ -150,7 +150,138 @@ pub mod enum_color;
 /// - 使用模式匹配代替if来确认结构体中的fgcolor和bgcolor的设置情况
 /// - 可以支持字符串设置颜色
 /// 
-///  
-pub fn test() {
+/// ##  析构顺序
+/// 
+/// 结构体中的字段是如何析构的？
+/// 
+/// Rust中变量的析构顺序是和其声明顺序相反的，但并非所有的类型都按这个熟悉顺序来析构。
+/// Q7: Newtype模式的优点
+/// A7：
+/// 1. 隐藏实际类型，限制功能。使用Newtype模式包装的类型并不能被外界访问，，除非提供相应的方法.
+/// 2. 明确语义。比如可以将f64类型包装为Miles(f64)和Kilometers(f64), 分别代表英里和千米，这样的语义提升是零成本的，没有多余的性能开销。
+/// 3. 使复制语义的类型具有移动语义， 比如本来f64是复制语义，而包装为Miles(f64)之后，因为
+/// 结构体本身不能被自动实现为Copy， 所以Miles(f64)就成了移动语义。
+/// 
+/// ### 本地变量
+/// 
+/// 本地变量遵循先声明后析构的规则，实际上这也是因为栈结构先进后出的特性。
+/// ```
+/// struct PrintDrop(&' static str)
+/// impl Drop for PrintDrop {
+///     fn drop(&mut self) {
+///         println!("Dropping {}", self.0);    
+///     }
+/// }
+/// 
+/// let x = PrintDrop("x");
+/// let y = PrintDrop("y");
+/// ```
+pub mod test {
+    
+    #[test]
+    fn drop_test(){
+        struct PrintDrop(&'static str);
+        impl  Drop for PrintDrop {
+            fn drop(&mut self) {
+                println!("Dropping {}", self.0);
+            }
+        }
+        
+        // let x = PrintDrop("x");
+        // let y = PrintDrop("y");
+        // output 
+        // Dropping y
+        // Dropping x
+        
+        // 元组
+
+        // let tup1 = (PrintDrop("a"), PrintDrop("b"), PrintDrop("c"));
+        // let tup2 = (PrintDrop("x"), PrintDrop("y"), PrintDrop("z"));
+        // output
+        // Dropping x
+        // Dropping y
+        // Dropping z
+        // Dropping a
+        // Dropping b
+        // Dropping c
+        //
+        // 元组整体的析构顺序和局部变量的析构顺序一致的，但是元组内部元素的析构顺序
+        // 则和局部变量的析构顺序相反，元组内部是按元素的出现顺序依次进行析构的。
+        // let tup1 = (PrintDrop("a"), PrintDrop("b"), PrintDrop("c"));
+        // let tup2 = (PrintDrop("x"), PrintDrop("y"), panic!());
+        // output 
+        // Dropping x
+        // Dropping a
+        // Dropping b
+        // Dropping c
+        //
+        // panic 会引起线程崩溃， 线程崩溃，触发了tup2的提前析构，此时tup2不算是一个
+        // 完整的元组，这种提前析构的顺序正好和局部变量的析构顺序一致：先声明的元素后析构
+        // 
+        
+        // 结构体和枚举
+        // 
+        // 结构体和枚举与元组的析构顺序是一致的
+        enum E{
+            Foo(PrintDrop, PrintDrop)
+        }
+
+        struct Foo {
+            x: PrintDrop,
+            y: PrintDrop,
+            z: PrintDrop,
+        }
+
+        // let e = E::Foo(PrintDrop("a"), PrintDrop("b"));
+        // let f = Foo {
+        //     x: PrintDrop("x"),
+        //     y: PrintDrop("y"),
+        //     z: PrintDrop("z"),
+        // };
+        // outout 
+        // Dropping x
+        // Dropping y
+        // Dropping z
+        // Dropping a
+        // Dropping b
+
+        // 同理， slice类型的集合类型的析构顺序，与元组、结构体、枚举体的析构行为是一致的。
+
+        // 闭包捕获变量
+
+        // 闭包的捕获变量的析构顺序和结构体的析构顺序是一致的。
+        // 
+        // let z = PrintDrop("z");
+        // let x  = PrintDrop("x");
+        // let y = PrintDrop("y");
+
+        // let closure = move || {y; z; x; };
+        // output 
+        // Dropping y
+        // Dropping z
+        // Dropping x
+        
+        // 闭包捕获变量的析构顺序和闭包内该变量的排列顺序一致，与捕获变量声明的顺序是没有关系的
+        // 这里要和普通函数内局部变量相区分，
+        // 闭包和元组、结构体类似，也存在析构顺序变化的情况
+
+        // let z = PrintDrop("z");
+        // let x  = PrintDrop("x");
+        // let y = PrintDrop("y");
+
+        // let closure = move || {
+        //     { let z_ref = &z; }
+        //     // 这是因为z在move到闭包之前被借用了，所以需要等待其离开作用域
+        //     // 归还所有权之后，才能被move到闭包中。
+        //     // 变量被捕获的顺序变为了z -> x -> y, 然后按此顺序再进行析构。
+        //     y; x; z;
+       
+        // }; 
+        // output 
+        // Dropping z
+        // Dropping y
+        // Dropping x
+    }
+
 
 }

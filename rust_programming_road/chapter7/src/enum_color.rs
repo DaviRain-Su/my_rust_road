@@ -286,7 +286,6 @@ impl fmt::Display for ColoredString  {
     }
 }
 
-
 #[test]
 fn basic() {
 //     #[derive(Debug)]
@@ -333,9 +332,6 @@ fn basic() {
     let yellow = "yellow".on_color("yellow").black();
     println!("{}", yellow);
 
-
     let red = "hello, world".on_color(String::from("red"));
     println!("{}", red);
-
-    
 }
