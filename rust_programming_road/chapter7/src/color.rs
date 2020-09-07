@@ -143,17 +143,17 @@ impl fmt::Display for ColoredString  {
         Ok(())
     }
 }
-#[test]
+// #[test]
 fn basic () {
     let hi = "Hello".red().on_yellow();
-    println!("{:?}", hi);
+    println!("{}", hi);
 
     let hi = "Hello".on_yellow();
-    println!("{:?}", hi);
+    println!("{}", hi);
 
     let hi = "Hello".red();
-    println!("{:?}", hi);
+    println!("{}", hi);
 
     let hi = "Hello".on_yellow().red();
-    println!("{:?}", hi);
+    println!("{}", hi);
 }
