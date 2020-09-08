@@ -282,6 +282,413 @@ pub mod test {
         // Dropping y
         // Dropping x
     }
+}
+
+/// # 常用设计模式 
+/// 
+/// 设计模式的思想一共涵盖了下面4点：
+/// - 针对接口编程
+/// - 组合优于继承
+/// - 分离变和不变
+/// - 委托代替继承
+/// 
+/// Rust语言本身的设计就非常符合这4点思想，
+/// 
+/// trait可以强制地实现对接口编程；
+/// 泛型和triat限定可以代替继承实现多态；
+/// 基于代数数据类型的结构体和枚举在没有继承的情况下一样可以更自由的构造各种类型；
+/// 类型系统天生分离了变与不变；
+/// 常用的迭代器就是利用委托来代替继承的。
+/// 
+/// 
+/// ### 建造者模式
+/// 
+/// Rust没有提供构造函数是出于对类型安全的考量。
+/// 
+/// 在Rust中是可以像函数式语言那样直接绑定值来构造类型实例。
+/// 在Rust中而是采用的建造者模式完成复杂类型的构造。
+/// 
+/// 建造者模式是指使用多个简单对象一步步构建一个复杂对象的模式。
+/// 该模式的主要思想就是讲变和不变分离，对于一个复杂的对象，肯定会有不变的的部分，
+/// 也有变得部分。将他们分离开，然后依次构建。
+/// 
+pub mod design_pattern {
+    
+    // 建造者设计模式,将Circle的构造委托给CircleBuilder构造
+    pub struct Circle {
+        x: f64,
+        y: f64,
+        radius: f64,
+    }
+
+    pub struct CircleBuilder {
+        x: f64, 
+        y: f64,
+        radius: f64,
+    }
+
+    impl Circle {
+        pub fn area(&self) -> f64 {
+            std::f64::consts::PI * (self.radius * self.radius)
+        }
+        pub fn new() -> CircleBuilder {
+            CircleBuilder {
+                x: 0., y: 0., radius: 1.,
+            }
+        }
+    }
+    // CircleBuilder实现一些方法，用来修改CircleBuilder的字段中的值，并在修改
+    // 完之后返回自身的可变借用，
+    // 最后Build方法，他根据CircleBuilder的实例构建最终的Circle实例并返回
+    impl CircleBuilder {
+        fn x(&mut self, coordinate: f64) -> &mut CircleBuilder {
+            self.x = coordinate;
+            self
+        }
+        fn y(&mut self, coordinate: f64) -> &mut CircleBuilder {
+            self.y = coordinate;
+            self
+        }
+
+        fn radius(&mut self, radius: f64) -> &mut CircleBuilder {
+            self.radius = radius;
+            self
+        }
+        fn builder(&self) -> Circle {
+            Circle {
+                x: self.x, y: self.y, radius: self.radius,
+            }
+        }
+    }
+    #[test]
+    fn test_circle(){
+        let c = Circle::new()
+                        .x(1.0)
+                        .y(2.0)
+                        .radius(2.0)
+                        .builder();
+        
+        println!("area = {}", c.area());
+        println!("c.x = {}, c.y = {}", c.x, c.y);
+    }
+
+    #[test]
+    fn comand_test() {
+        use std::process::Command;
+
+        Command::new("ls")
+                .arg("-l")
+                .arg("-a")
+                .spawn()
+                .expect("ls command failed to start");
+    }
+}
+
+/// # 访问者模式
+/// 
+/// Rust中另一个重要的模式是访问者模式， Vistor Pattern, 访问者模式用于将数据
+/// 结构和作用于结构上的操作解耦。
+/// Rust语言自身在解析抽象语法树是就用到了访问者模式。
+/// 
+mod vistor_pattern {
+    // Rust 编译器源码中的访问者模式
+    // 这段代码用于构建抽象语法树的，Rust语法中包含了语句(Stmt)， 标识符(Name)，和表达式(Expr)
+    // 这些包含在ast模块中类型虽然各不相同，但是他们整体是在描述同一个抽象语法树的结构。
+    // 因此，整个抽象语法树就是一个异构的结构，其中的每个语法节点都是不同的类型，对于
+    // 这些节点的操作也是各不相同的。语法节点基本是确定的，变化不会太大，但是对节点的操作
+    // 需要经常改动。
 
 
+    // 访问者模式一般包含两个层次：
+    // 1. 定义需要操作的元素
+    // 2. 定义相关的操作
+
+    mod ast {
+        pub enum Stmt {
+            Expr(Expr),
+            Let(Name, Expr),
+        }
+
+        pub struct Name {
+            value: String,
+        }
+        pub enum Expr {
+            IntLit(i64),
+            Add(Box<Expr>, Box<Expr>),
+            Sub(Box<Expr>, Box<Expr>),
+        }
+    }
+
+    mod visit {
+        use super::ast::*;
+
+        pub trait Visitor<T> {
+            fn visit_name(&mut self, n: &Name) -> T;
+            fn visit_stmt(&mut self, s: &Stmt) -> T;
+            fn visit_expr(&mut self, e: &Expr) -> T;
+        }
+    }
+
+    // ast模块定义了抽象语法树种的全部节点相关的数据结构， 而visit模块中的
+    // Visitor triat则定义了相关的操作，所以在解析语法树的时候，只需要为
+    // 解析器实现相关的visit方法即可操作相关节点。
+
+    use visit::*;
+    use ast::*;
+    struct Interpreter;
+    impl Visitor<i64> for Interpreter{
+        fn visit_name(&mut self, n: &Name) -> i64 {
+            panic!()
+        }
+        fn visit_stmt(&mut self, s: &Stmt) -> i64 {
+            match *s {
+                Stmt::Expr(ref s) => self.visit_expr(s),
+                Stmt::Let(..) => unimplemented!(),
+            }
+        }
+        fn visit_expr(&mut self, e: &Expr) -> i64 {
+            match *e {
+                Expr::IntLit(n) => n,
+                Expr::Add(ref lhs, ref rhs) => 
+                    self.visit_expr(lhs) + self.visit_expr(rhs),
+                Expr::Sub(ref lhs, ref rhs) => 
+                    self.visit_expr(lhs) + self.visit_expr(rhs)
+            }
+        }
+    }
+}
+
+/// ## Serde库中的访问者模式
+/// 
+/// Serde, 是一个对Rust数据节后进行序列化和反序列化的高效框架，
+/// Serde的命名就是分别从Serialize（序列化）和Deserialize(反序列化)
+/// 两个单词中组合而成的。
+/// 
+/// Serder之所以称为框架，是因为定义了统一的数据模型，并通过访问者模式开放了
+/// 序列化和反序列化的操作接口。Serde支持的数据格式， JSON, XML, BinCOde, 
+/// YAML, MessagePack, TOML. 
+/// 
+/// Serde中序列化和反序列化都是用了访问者模式，
+/// Serde中自定义了一些类型来对应可能出现的所有数据类型，包括基本的原生类型，String, option
+/// unit， seq, tuple, tuple_strcut, map, struct 等， option代表了Option<T>， 
+/// tuple_struct 代表了元组结构体，， seq代表了线性序列，map则的代表了k-v结构的容器
+/// 
+/// 这些异构的类型构成了Serde框架的统一数据模型。
+///  
+/// 
+/// 通过Deserializer和Visitor两个trait定义了反序列化开放的操作接口，这就涉及Serde框架
+/// 利用访问者模式所定义的主要内容，统一的数据模型和开放的操作接口，然后再针对不同的数据格式
+/// 实现不同的访问者操作方法。
+/// 
+/// 
+/// 
+mod serde_example {
+//     trait Deserializer<'a> {
+//         type Error;
+//     }
+
+    pub trait Deserialize<'de>: Sized {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where D: Deserializer<'de>;
+    }
+    pub trait Deserializer<'de> : Sized {
+        type Error;
+        fn deserialize_any<V>(self, visitor: V) 
+            -> Result<V::Value, Self::Error> where V: Visitor<'de>;
+        fn deserialize_str<V>(self, visitor: V) 
+            -> Result<V::Value, Self::Error> where V: Visitor<'de>;
+        // ...
+    }
+
+    pub trait Visitor<'de> :Sized {
+        type Value;
+        fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>;
+            // where E : Error,
+        // {
+            // Err(Error::invalid_type(Unexpected::Bool(v), &self))
+        // };
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>;
+            // where E : Error,
+        // {
+            // Err(Error::invalid_type(Unexpected::Str(v), &self))
+        // }
+        // ... 
+    }
+
+    /// JSON格式数据反序列化
+    /// 将JSON格式中出现的数据类型统一定义为一个Value枚举体，
+    /// 
+    /// 反序列化，就是讲JSON格式的字符串解析为Rust数据类型，
+    /// 
+    /// 访问者模式将数据结构和操作分离开，为代码的扩展提供了极大的便利
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum Value {
+        Null,
+        Bool(bool),
+        // Number(Number),
+        String(String),
+        Array(Vec<Value>),
+        // Object(Map<String, Value>),
+    }
+
+    // impl <'de> Deserialize<'de> for Value {
+    //     fn deserialize<D>(deserializer: D) -> Result<Value, D::Error> 
+    //         where D : Deserializer<'de>,
+    //     {
+    //         struct ValueVisitor;
+    //         impl <'de> Visitor<'de>  for ValueVisitor{ 
+    //             type Value = Value;
+    //             fn visit_bool<E> (self, value: bool) -> Result<Value, E> {
+    //                 Ok(Value::Bool(value))
+    //             }
+    //             fn visit_str<E> (self, value: &str) -> Result<Value, E> {
+    //                 Ok(Value::String(value.to_string()))
+    //             }
+    //             // ... 
+    //         }
+            
+    //         deserializer.deserialize_any(ValueVisitor);
+    //     }
+
+    //     impl<'de> Deserializer<'de> for Value {
+    //         type Error = std::io::Error;
+    //         fn deserialize_any<V>(self, visitor: V)
+    //             -> Result<V::Value, Error> where V: Visitor<'de> 
+    //         {
+    //             match self {
+    //                 Value::Null => visitor.visit_unit(),
+    //                 Value::Bool(v) => visitor.visit_bool(v),
+    //                 Value::Number(n) => visitor.visit_any(visitor),
+    //                 Value::String(v) => visitor.visit_string(v),
+    //                 Value::Array(v) => { visitor.visit_seq(v)},
+    //                 Value::Object(v) => { visitor.visit_map(v)},
+    //             }
+    //         }
+    //     }
+    // }
+}
+
+/// ## RAII模式
+/// 
+/// Rust的特色是利用Rust进行资源管理
+/// 
+mod raii_example {
+    #[derive(Clone)]
+    pub struct Letter {
+        text: String,
+    }
+
+    pub struct Envelope {
+        letter : Option<Letter>, // 表示有信和无信两种状态
+    }
+
+    // 表示信件被装车送走
+    pub struct PickupLorryHandle {
+        done: bool,
+    }
+    impl Letter {// 写信操作
+        pub fn new(text: String) -> Self {
+            Self { text }
+        }
+    }
+    impl Envelope {// 装信操作
+        pub fn wrap(&mut self, letter: &Letter) {
+            self.letter = Some(letter.clone());
+        }
+    }
+    // 表示购买带邮戳的空信封
+    pub fn buy_prestamped_envelope() -> Envelope {
+        Envelope { letter: None}
+    }
+
+    impl PickupLorryHandle {
+        // 邮件的装车操作
+        pub fn pickup(&mut self, evvelop: &Envelope) {
+            // give letter
+        }
+        // 邮件的寄走操作
+        pub fn done(&mut self) {
+            self.done = true;
+            println!("sent");
+        }
+    }
+
+    // 表示信封下单装车准备寄走
+    pub fn order_pickup() -> PickupLorryHandle {
+        PickupLorryHandle {
+            done: false, // other handles
+        }
+    }
+    #[test]
+    fn test_letter() {
+        let letter = Letter::new(String::from("Der RustFest"));
+        let mut envelope = buy_prestamped_envelope();
+        envelope.wrap(&letter);
+        let mut lorry = order_pickup();
+        lorry.pickup(&envelope);
+        lorry.done();
+    }
+}
+
+/// 1. letter可能被复制多份并被装到多个信封里，不安全
+/// 2. 信封里可能有信，也可能没有信；或者同一信封可能装多封不同的信件，不安全
+/// 3. 无法保证一定把信交给邮车，不安全
+/// 
+/// 
+/// 
+mod refactor_letter_example {
+    pub struct Letter {
+        text: String,
+
+    }
+    // 空信封
+    pub struct EmptyEnvelope{}
+    // 已装好信件的信封
+    pub struct CloseEnvelope{ letter : Letter }
+    pub struct PickupLorryHandle { done: bool }
+    impl Letter {
+        pub fn new(text: String) -> Self {
+            Self { text, }
+        }
+    }
+
+    impl EmptyEnvelope {
+        // 实现将空信封中放入信件， 将letter用于实例化CloseEnvelope，
+        // 并转移了letter所有权，确保信件只封装了一次
+        pub fn wrap(self, letter: Letter) -> CloseEnvelope {
+            CloseEnvelope{ letter }
+        }
+    }
+    // 确保购买的是空信封
+    pub fn buy_prestamped_envelope() -> EmptyEnvelope {
+        EmptyEnvelope{}
+    }
+
+    impl PickupLorryHandle {
+        pub fn pickup(&mut self, evenlope: CloseEnvelope) {
+            // give letter
+        }
+
+        pub fn done(self) {}
+    }
+
+    impl Drop for PickupLorryHandle {
+        fn drop(&mut self) {
+            println!("Sent");
+        }
+    }
+
+    pub fn order_pickup() -> PickupLorryHandle {
+        PickupLorryHandle {
+            done: false, // other handles
+        }
+    }
+    #[test]
+    fn test_letter() {
+        let letter = Letter::new(String::from("Dear RustFest"));
+        let envelope = buy_prestamped_envelope();
+        let closed_envelope = envelope.wrap(letter);
+        let mut lorry =  order_pickup();
+        lorry.pickup(closed_envelope);
+    }
 }
