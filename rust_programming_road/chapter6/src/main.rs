@@ -26,7 +26,7 @@ fn main() {
     //------------------------------------------------
 
     //----------test fcuntion para pattern ------------
-    chapter6::function_para_pattern();
+    // chapter6::function_para_pattern();
 
     let a = A{
         a: "hello".to_string(),

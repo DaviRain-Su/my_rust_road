@@ -54,9 +54,28 @@ pub fn modify(mut v: Vec<u32>) -> Vec<u32> {
 } 
 
 /// by reference of mutable
-/// 
+/// ```
+/// pub fn modify_ref_mut(v: &mut [u32]) {
+///     v.reverse();
+/// }
+/// let mut v = vec![1,2,3];
+/// modify(&mut v); // 这里的绑定相当于是let v = &mut v;
+/// println!("{:?}", v); // 3, 2, 1
+/// ```
+///  
 pub fn modify_ref_mut(v: &mut [u32]) {
     v.reverse();
+}
+#[test]
+fn test_ref() {
+    let mut v = vec![1, 2, 3];
+
+    let v2 = &v;
+
+    let v1 = &mut v;
+    v1.reverse();
+    println!("{:?}", v1);
+    // println!("{:?}", v2); // error     
 }
 
 /// ## 6.1.1 函数遮蔽
@@ -100,13 +119,47 @@ pub fn function_shadow() {
 /// 
 /// ```
 /// 
+#[test]
 pub fn function_para_pattern() {
     let string = String::from("hello, world");
 
-    fn foo(ref s : String){
+    fn foo(ref s : String){ // let ref s = s;
         println!("s = {}", s);
     }
     
     foo(string);
+    // println!("{:?}", string);// error, stirng have been moved
 
+    #[derive(Debug)]
+    pub struct S { i : i32 }
+    fn fOwnership(ref mut s : S) {// let ref s = s;
+        // println!("{:p}", s);
+        // s = S { i: 22};
+        s.i = 22;
+    }
+    fn fRefmut(ref mut s: &mut S) {
+        s.i = 22;
+    }
+    fn fRef(ref s : &S) {
+        println!("{:p}", s);
+    }
+    let mut s = S { i : 23};
+    // let s1 = s;
+    println!("{:?}", s);
+    fRef(&s);
+    fRefmut(&mut s);
+    println!("{:?}", s);// error s have been moved
+
+    fn foo2( _ :i32) {
+        println!("foo");
+    }
+    foo2(3); 
+
+    fn swap((x, y): (&str, i32)) -> (i32, &str) { // let (x, y) = temp;
+        (y, x)
+    }
+    let t= ("alex", 18);
+    println!("{:?}",t);
+    let t = swap(t);
+    println!("{:?}",t);
 } 
