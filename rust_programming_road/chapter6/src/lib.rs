@@ -357,3 +357,65 @@ mod function  {
         assert_eq!(2, f(1));
     }
 }
+
+mod closure {
+    
+    /// 返回闭包
+    #[test]
+    fn return_closure(){
+        // counter 函数返回的是一个闭包，放在Box<T>中，是因为闭包的大小在编译期是未知的。
+        // 在Rust 2018 中，返回的闭包也可以使用impl Trait语法，impl Fn(i32) -> i32
+        // fn counter(i: i32) -> Box<dyn Fn(i32) -> i32> {
+        
+        // 这里的i是复制语义，所以是以按引用捕获。
+        // 此引用会妨碍闭包做为函数返回值，编译器会报错，
+        // 所以这里使用move 关键字来把自由变量i的所有权转移到闭包中，
+        // 因为变量i是复制语义，所以这里只会进行按位复制。
+
+        // 这里的Fn(i32) -> i32,并不是函数指针，而是一个triat
+        fn counter(i: i32) -> impl Fn(i32) -> i32 {
+            Box::new(move |n : i32| n + i)
+        }
+
+        let f = counter(3);
+        assert_eq!(4, f(1));
+    }
+
+    // 闭包函数可以使任意类型
+    #[test]
+    fn closure_any_para(){
+        fn val() -> i32 { 5 }
+        // 这里定义了闭包有两个函数
+        // 第一个是函数指针类型，第二个是元组类型，虽然元组类型中没有显式的标注类型，但是Rust
+        // 编译器会通过函数指针类型的信息来推断其为i32类型
+        let add =  | a: fn() -> i32, (b, c) | (a)() + b + c;
+        let  r = add(val, (2, 3));
+        assert_eq!(r, 10);
+    }
+    #[test]
+    fn different_closure(){
+        let c1 = || { println!("c1");};
+        let c2 = || { println!("c2"); };
+        let v = [c1, c2];
+        for item in v.iter() {
+            item();
+        }
+    }
+
+    #[test]
+    fn closure_type() {
+        // let v1 : () = || {};
+//error[E0308]: mismatched types
+//    --> src/lib.rs:407:23
+//     |
+// 407 |         let v1 : () = || {};
+//     |                  --   ^^^^^ expected `()`, found closure
+//     |                  |
+//     |                  expected due to this
+//     |
+//     = note: expected unit type `()`
+//                  found closure `[closure@src/lib.rs:407:23: 407:28]`
+    }
+
+    
+}
