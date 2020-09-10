@@ -162,4 +162,198 @@ pub fn function_para_pattern() {
     println!("{:?}",t);
     let t = swap(t);
     println!("{:?}",t);
-} 
+}
+#[test]
+fn test_function_return_value () {
+    fn addsub(x: isize, y: isize) -> (isize, isize) {
+        (x + y, x - y)
+    }
+    let (a, b) = addsub(5,8);
+    println!("a: {:?}, b: {:?}", a, b);
+
+    fn gcd(a: u32, b: u32 ) -> u32 {
+        if b == 0 { return a; }
+        return gcd(b, a % b);
+    }
+    let g = gcd(60,40);
+    assert_eq!(20, g);
+}
+
+/// # 泛型函数
+/// 
+/// 这里在调用square函数的时候并没有指定具体地类型，而是靠编译器来进行自动推断的。
+/// 这里使用的都是基本原生类型，编译器推断起来很简单。
+/// 但是肯定也存在编译器无法自动推断的情况，此时就需要显式地指定函数调用的类型，
+/// 这里就需要用到了turbofish擦作符了::<>
+#[test]
+fn test_fan_function(){
+    use std::ops::Mul;
+    fn square<T: Mul<T,Output=T>>(x:T, y: T) -> T {
+        x * y
+    }
+    let a = square(37, 41);
+    let b = square(37.2, 42.1);
+    println!("a = {}, b = {}", a, b);
+    let a = square::<u32>(34, 23);
+    let b = square::<f32>(37.2, 42.1);
+    println!("a = {}, b = {}", a, b);
+}
+
+/// ## 方法和函数
+///  
+#[test]
+fn function_and_way(){
+    #[derive(Debug)]
+    struct User {
+        name: &'static str,
+        avatar_url: &'static str,
+    }
+
+    impl User {
+        pub fn show(&self) {
+            println!("name : {:?}", self.name);
+            println!("avatar : {:?}", self.avatar_url);
+        }
+    }
+
+    let user = User {
+        name: "alex",
+        avatar_url: "hhehwewkejk",
+    };
+
+    // User::show(&user);
+    user.show(); // 等价于User::show(&user);
+    // 结构体实例user被隐式传递给show方法，user就是show方法的接受者。
+}
+
+/// ## 高阶函数
+/// 
+/// 在数学中的，高阶函数叫做算子或泛函。在计算机科学中，高阶函数是指函数作为
+/// 参数或返回值的函数，它也是函数式编程语言最基本的特性。
+/// Rust 语言也支持高阶函数，因为函数在Rust中是一等公民。
+/// 
+/// ### 函数可以作为参数传递
+/// 
+mod function  {
+    #[test]
+    fn func_as_para() {
+        // math 是一个高阶函数，在调用的时候传入的只是函数名
+        // 实现这一切的基础在于Rust支持类似C/C++语言中的函数指针。
+        // 函数指针，是指向函数的指针，其值为函数的地址。
+        fn math(op: fn(i32, i32) -> i32, a: i32, b: i32) -> i32 {
+            op(a,b)
+        }
+
+        fn sum(a: i32, b: i32) -> i32 {
+            a + b
+        }
+        fn product(a: i32, b: i32) -> i32 {
+            a * b
+        }
+
+        let (a, b) = (3, 4);
+        println!("sum = {}, product = {}", math(sum, a, b), math(product, a, b));
+    }
+
+    #[test]
+    fn function_pointer(){
+        fn hello() {
+            println!("hello function pointer");
+        }
+        // let声明必须显式指定函数指针类型为fn(), 以及赋值使用的是函数名hello
+        // 而非带括号的函数调用
+        let fn_ptr : fn() = hello; // 这里是函数指针
+        println!("{:p}", fn_ptr); 
+        let other_fn = hello; // 这里是函数调用， other_fn 的类型
+        // 为fn() {hello}, 这其实就是函数hello本身的类型，所以Other_fn不是函数指针类型。
+
+        // println!("{:p}", other_fn);// erro 这不是函数指针
+        hello();
+        fn_ptr();
+        other_fn();
+        (other_fn)();
+    }
+
+    #[test]
+    fn function_as_return() {
+        type MathOp = fn(i32, i32) -> i32;
+        fn math(op: &str) -> MathOp {
+            fn sum(a: i32, b: i32) -> i32 {
+                a + b
+            }
+            fn product(a: i32, b: i32) -> i32 {
+                a * b
+            }
+
+            match op {
+                "sum" => sum,
+                "product" => product,
+                _ => {
+                    println!(
+                        "Warning: Not Implemented {:?} operator, Replace with sum", 
+                        op 
+                    );
+                    sum
+                }
+            }
+        }
+
+
+        //test
+        let (a, b) = (2, 3);
+        let sum = math("sum");
+        let product = math("product");
+        let div = math("div");
+        assert_eq!(sum(a, b), 5);
+        assert_eq!(product(a, b), 6);
+        assert_eq!(div(a, b), 5);
+    }
+
+    #[test]
+    fn function_as_return2() {
+        fn sum(a: i32, b: i32) -> i32 {
+            a + b
+        }
+        fn product(a: i32, b: i32) -> i32 {
+            a * b
+        }
+        
+        type Mathop = fn(i32, i32) -> i32;
+        // fn math(op: &str, a: i32, b: i32) -> Mathop {
+        //     match op {
+        //         "sum" => sum(a,b),// this type is a i32
+        //         _ => product(a, b), // this type is a i32
+        //     }
+        // }
+        
+        let (a, b) = (3, 2);
+        // let sum = math("sum", a, b);
+    }
+    #[test]
+    fn function_as_return3(){
+        fn counter() -> fn(i32) -> i32 {
+            fn inc(n: i32) -> i32 {
+                n + 1
+            }
+            inc
+        }
+
+        let f = counter();
+        assert_eq!(2, f(1));
+    }
+
+    #[test]
+    fn function_as_return4(){
+        fn counter() -> fn(i32) -> i32 {
+            fn inc(n: i32) -> i32 {
+                n + 1 // 函数不能捕获外部环境，
+                // Rust中不允定义的函数捕获动态环境中的变量，因为
+                // 变量i会随着栈帧的释放的而释放，解决方式是可以采用闭包来使用
+            }
+            inc
+        }
+
+        let f = counter();
+        assert_eq!(2, f(1));
+    }
+}
