@@ -1,3 +1,4 @@
+#![feature(unboxed_closures, fn_traits)]
 pub mod model_pattern;
 /// # 函数、闭包与迭代器
 /// 
@@ -417,5 +418,77 @@ mod closure {
 //                  found closure `[closure@src/lib.rs:407:23: 407:28]`
     }
 
-    
+    #[test]
+    fn impl_closure() {
+        
+        struct Closure {
+            env_var: u32,
+        }
+
+        impl FnOnce<()> for Closure {
+            type Output = u32;
+            extern "rust-call" fn call_once(self, args: ()) -> u32 {
+                println!("call it FnOnce()");
+                self.env_var + 2
+            }
+        }
+
+        impl FnMut<()> for Closure {
+            extern "rust-call" fn call_mut(&mut self, args: ()) -> u32 {
+                println!("call it FnMut()");
+                self.env_var + 2
+            }
+        }
+        
+        impl Fn<()> for Closure {
+            extern "rust-call" fn call(&self, args: ()) -> u32 {
+                println!("call it Fn()");
+                self.env_var + 2
+            }
+        }
+
+        fn call_it<F: Fn() -> u32>(f: &F) -> u32 {
+            f()
+        }
+
+        fn call_it_mut<F: FnMut() -> u32>(f: &mut F) -> u32 {
+            f()
+        }
+
+        fn call_it_once<F: FnOnce() -> u32>(f: F) -> u32 {
+            f()
+        }
+        
+        let env_var = 1;
+        let mut c = Closure{ env_var : env_var };
+
+        c(); // 默认调用的是Fn triat 实现的 call()方法，
+        // 此处结构体实例可以像函数那样被调用，这是因为。
+        // extern "rust-call" fn call(&self, args: ()) -> u32;
+        // extern 关键字用于fn前，表示使用指定的ABI (Application Binary Interface）
+        // 程序二进制接口，此处代表指定使用Rust语言的rust-call ABI， 它的作用是将
+        // 函数参数中的元组类型做动态扩展，以便支持可变长参数。
+        // 因为在Fn, FnMut, FnOnce这三个trait里方法要接受闭包参数，而编译器本身并不可能知道
+        // 开发者给闭包设定的参数个数，所以这里只能传元组，然后由rust-call ABI 在底层做动态扩展。
+
+        c.call(());         // 这里必须显式的指定一个单元值为参数
+        c.call_mut(());     // 同上
+        c.call_once(());    // 同上
+
+        let mut c = Closure{ env_var: env_var};
+        {
+            assert_eq!(3, call_it(&c));
+        }
+        {
+            assert_eq!(3, call_it_mut(&mut c));
+        }
+        {
+            assert_eq!(3, call_it_once(c));
+        }
+        
+        //模拟的闭包等价于这个， 闭包这里默认是用不可变引用的方式去捕获的
+        let env_var = 1;
+        let c = || env_var + 2;
+        assert_eq!(3, c());
+    }
 }

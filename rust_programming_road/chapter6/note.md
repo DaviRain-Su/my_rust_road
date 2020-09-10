@@ -154,7 +154,7 @@ fn main() {
 
 Q7: 函数参数的模式匹配问题
 A7: 因为函数中参数等价于一个隐式地let绑定，而let绑定本身就是一个模式匹配的行为。
-```
+```rust
 // 变量中的绑定
 // 在Rust中，一般把声明的局部变量并初始化的语句称为变量绑定。
 struct Point {
@@ -275,7 +275,7 @@ A14: 1 延迟执行， 返回的闭包只有在需要调用的时候才会执行
 Q15: 闭包的构成
 A15: 闭包由管道符（两个对称的竖线）和花括号（或圆括号）组合而成。管道符里是闭包函数
 的参数，可以像函数参数那样在冒号后面添加类型标注。也可以省略类型标注。
-```
+```rust
 let add = |a, b| -> i32 { a + b};
 let add = |a, b| a + b;
 ```
@@ -313,5 +313,44 @@ FnOnce::call_once(a, (b, c, d))
 增加的这三个trait分别就是Fn, FnMut, FnOnce 
 
 ```rust
+#[lang="fn_once"] // 表示其属于语言项lang item, 分别以fn, fn_mut, fn_once来查找这撒个triat
+#[rustc_paren_sugar] // 表示这三个tirat是对括号调用语法的特殊处理，在编译器内部进行类型检查的时候，仅会将最外层为圆括号的情况识别为方法调用。在类型签名或方法签名中有时候
+// 有尖括号，比如<F: Fn(u8,u8) -> u8>，而此时尖括号里面的括号就不会被识别为方法调用
+#[fundamental]// 为了支持tirat一致性而增加的属性，加上此属性则被允许为Box<T>实现指定的triat。
+pub trait FnOnce<Args> {
+    type Output;
+    extern "rust-call" fn call_once(self, args: Args) -> Self::Output;
+}
+#[lang="fn_mut"]
+#[rustc_paren_sugar]
+#[fundamental]
+pub trait FnMute<Args> : FnOnce<Args> {
+    extern "rust-call" fn call_mut(&mut self, args: Args) -> Self::Output;
+}
+#[lang="fn"]
+#[rustc_paren_sugar]
+#[fundamental]
+pub trait FnOnce<Args>: FnMut<Args> {
+    extern "rust-call" fn call(&self, args: Args) -> Self::Output;
+}
+```
 
+Q19: 为什么要实现三个tirat? 
+A19: 这和所有权时有关的。
+1. FnOnce调用参数为self, 这意味着他会转移方法接受者的所有权，也就是说，这种方法
+调用一次。
+2. FnMut调用参数为&mut self, 这意味着他会对方法接受者进行可变借用
+3. Fn 调用参数为&self, 这意味他会对方法接受者进行不可变借用，也就是说，这种方法
+调用可以被调用多次。
+
+现在函数调用被抽象成三个triat， 实现闭包就很简单了，只需要用结构体代替闭包表达式，
+然后按具体地需求为此结构体实现对应的trit即可。这样的话，每个闭包表达式实际上就是
+该闭包结构的具体实例，该结构体内部成员可以存储闭包捕获的变量，然后在调用的时候使用。
+
+Q20: 闭包时基于triat的语法糖，所以可以使用triat对象来显式地指定其类型
+A20: 
+```rust
+let env_var = 1;
+let c: Box<Fn() -> i32> = Box::new(|| { env_var + 2});
+assert_eq!(3, c());
 ```
