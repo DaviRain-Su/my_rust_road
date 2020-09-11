@@ -375,8 +375,24 @@ mod closure {
 
         // 这里的Fn(i32) -> i32,并不是函数指针，而是一个triat
         fn counter(i: i32) -> impl Fn(i32) -> i32 {
-            Box::new(move |n : i32| n + i)
+            Box::new( move |n : i32| n + i)
         }
+// error[E0373]: closure may outlive the current function, but it borrows `i`, which is owned by the current function
+//    --> src/lib.rs:378:22
+//     |
+// 378 |             Box::new(|n : i32| n + i)
+//     |                      ^^^^^^^^^     - `i` is borrowed here
+//     |                      |
+//     |                      may outlive borrowed value `i`
+//     |
+// note: closure is returned here
+//    --> src/lib.rs:377:31
+//     |
+// 377 |         fn counter(i: i32) -> impl Fn(i32) -> i32 {
+//     |                               ^^^^^^^^^^^^^^^^^^^
+// help: to force the closure to take ownership of `i` (and any other referenced variables), use the `move` keyword
+//     |
+// 378 |             Box::new(move |n : i32| n + i)
 
         let f = counter(3);
         assert_eq!(4, f(1));
@@ -485,10 +501,242 @@ mod closure {
         {
             assert_eq!(3, call_it_once(c));
         }
-        
+
         //模拟的闭包等价于这个， 闭包这里默认是用不可变引用的方式去捕获的
         let env_var = 1;
         let c = || env_var + 2;
         assert_eq!(3, c());
+    }
+
+    #[test]
+    fn copy_closure_example() {
+        let s = "hello"; // 字符串字面量是复制语义
+        let mut c = || { println!("{:?}" ,s); }; //因为这里的println!是对s的不可变借用，所以这里的闭包类型是Fn,
+                                    //因为闭包对于复制语义是按照不可变引用的方式捕获， 所以这里捕获的变量s是不可变引用的形式
+        // 所以，根据闭包内使用变量的方式推断出这里的闭包时Fn, 捕获变量的方式是以不可变引用的方式去捕获
+        c();
+        c();// 闭包C可以两次调用，说明编译器自动为闭包表达式实现的结构体实例并未失去所有权。
+        println!("{:?}", s); // 这里也说明了只有不可变借用才可以被借用多次。
+        c;
+        c.call_mut(()); // 这里因为调用的是call_mut所以需要c是mut的
+        c.call_once(()); // 因为s是复制语义，所以这里默认实现的FnOnce也会自动实现Copy去捕获s
+        // 所以此处调用call_once并不会导致闭包c所有权被转移
+        // 如果闭包c的捕获变量是移动语义，那么调用call_once就会被转移所有权
+
+        println!("{:?}", s); //这里依然可以打印s, 这也说明了在调用call_once之后闭包
+        // 闭包依旧是按照不可变借用的方式捕获
+
+        // 要实现Fn就必须实现FnMut, FnOnce, 所以被编译器翻译为匿名结构体和triat， 那么Fn, FnMut, FnOnce
+        // 都会被实现。
+
+        struct Closure<'a> {
+            env_var: &'a str,
+        }
+
+        impl<'a> FnOnce<()> for Closure<'a> {
+            type Output = ();
+            extern "rust-call" fn call_once(self, args: ()) -> (){
+                println!("{:?}", self.env_var);
+            }
+        }
+
+        impl<'a> FnMut<()> for Closure<'a> {
+            extern "rust-call" fn call_mut(&mut self, args: ()) -> () {
+                println!("{:?}", self.env_var);
+            }
+        }
+        
+        impl<'a> Fn<()> for Closure<'a> {
+            extern "rust-call" fn call(&self, args: ()) -> () {
+                println!("{:?}", self.env_var);
+            }
+        }
+
+        let env_var = "hello";
+        let mut c = Closure{ env_var: &env_var };
+        c();
+        c.call_mut(());
+        c.call_once(());
+
+    }
+
+    #[test]
+    fn move_closure() {
+        let s = "hello".to_string(); // 移动语义类型
+        let mut c = || s; // 这里闭包返回的是s, 也是采用的移动语义类型，
+                                    // 所以闭包会以FnOnce的方式来操作
+        // 这里闭包添加了mut来设置闭包的可变性，这里是为了显式的调用call_mut
+        
+        c();
+        // c(); // error, use of moved value 'c'
+        // println!("{:?}", s); // error, use of moved value 'c'
+
+        // 闭包c在第一次调用时转移了所有权，导致第二次调用失败。证明了其实现的闭包结构体
+        // 实例所实现的trait方法线束必然是self, 这个说名了闭包实现的是FnOnce
+        // 后面的println调用失效，也说明了闭包c，夺走了s的所有权。
+
+        // 既然闭包的默认调用的是FnOnce, 这也说明了编译器翻译的闭包结构体中记录捕获
+        // 变量的成员字段不是引用类型，并且只实现了FnOnce, 所以肯定无法显式地调用
+        // call, call_mut 方法
+
+        // c.call(()); // error 
+// error[E0525]: expected a closure that implements the `FnMut` trait, but this closure only implements `FnOnce`
+//    --> src/lib.rs:566:17
+//     |
+// 566 |         let c = || s; // 这里闭包返回的是s, 也是采用的移动语义类型，
+//     |                 ^^^-
+//     |                 |  |
+//     |                 |  closure is `FnOnce` because it moves the variable `s` out of its environment
+//     |                 this closure implements `FnOnce`, not `FnMut`
+// ...
+// 581 |         c.call(());
+//     |           ---- the requirement to implement `FnMut` derives from here
+
+
+            // c.call_mut(()); //erro
+
+//             error[E0525]: expected a closure that implements the `FnMut` trait, but this closure only implements `FnOnce`
+//    --> src/lib.rs:566:17
+//     |
+// 566 |         let c = || s; // 这里闭包返回的是s, 也是采用的移动语义类型，
+//     |                 ^^^-
+//     |                 |  |
+//     |                 |  closure is `FnOnce` because it moves the variable `s` out of its environment
+//     |                 this closure implements `FnOnce`, not `FnMut`
+// ...
+// 595 |             c.call_mut(());
+//     |               -------- the requirement to implement `FnMut` derives from here
+
+
+
+
+
+//         error[E0382]: use of moved value: `c`
+//    --> src/lib.rs:568:9
+//     |
+// 567 |         c();
+//     |         --- `c` moved due to this call
+// 568 |         c(); // error, use of moved value 'c'
+//     |         ^ value used here after move
+//     |
+// note: closure cannot be invoked more than once because it moves the variable `s` out of its environment
+//    --> src/lib.rs:566:20
+//     |
+// 566 |         let c = || s;
+//     |                    ^
+// note: this value implements `FnOnce`, which causes it to be moved when called
+//    --> src/lib.rs:567:9
+//     |
+// 567 |         c();
+
+
+        // 闭包c默认实现了FnOnce, 所以显式调用call, call_mut方法是，编译器都报错了，
+        // 并且提示闭包只实现了FnOnce.
+
+    }
+
+    #[test]
+    fn mut_closure() {
+        let mut s = "rust".to_string();
+        {
+            println!("{:?}", s);
+            let mut c = || { 
+                s += "rust"; 
+                // pub trait AddAssign<Rhs = Self> {
+                //     fn add_assign(&mut self, rhs: Rhs);
+                // }
+                println!("{:?}", s); 
+            };
+
+            c();
+            c();
+            c.call_once(()); // 实现了FnMut的闭包，必然实现了FnOnce,但是不会实现Fn
+            println!("{}",s);
+            // c.call(());
+
+        // error[E0525]: expected a closure that implements the `Fn` trait, but this closure only implements `FnMut`
+        //     --> src/lib.rs:643:25
+        //      |
+        //  643 |             let mut c = || { 
+        //      |                         ^^ this closure implements `FnMut`, not `Fn`
+        //  644 |                 s += "rust"; 
+        //      |                 - closure is `FnMut` because it mutates the variable `s` here
+        //  ...
+        //  654 |             c.call(());
+        //      |               ---- the requirement to implement `Fn` derives from here
+        //     println!("{:?}", s);
+
+        }
+
+        // let mut s1 = String::from("hello");
+        // // let s2 = &mut s1;
+        // s1 += "world";
+        // println!("{:?}", s1);
+        println!("{:?}", s);
+    }
+    #[test]
+    fn copy_move_example() {
+        let s = "hello";
+        let c = move || { 
+            println!("{:?}", s); // 这里的使用方式是不可引用的方式，所以闭包实现的是Fn
+        };
+        c();
+        c();
+        println!("{:?}", s);
+
+        let s1 = String::from("hello");
+        let c1 = move || { 
+            println!("{}", s1);
+            drop(s1); // 移动语义，所以闭包实现的是FnOnce
+        };
+        c1();
+        // c1();
+        // println!("{}", s1);
+
+        let s2 = String::from("hello");
+        let c2 = move || {
+            println!("{}", s2); // 闭包中变量的使用方式是不可变借用的方式，所以闭包实现的是Fn
+        }; // 所以闭包可以被多次调用
+        c2(); 
+        c2();
+        // println!("{}", s2); // s2是移动语义类型，使用move被转移到了闭包中
+        
+        let mut s3 = String::from("hello");
+        let mut c3 = move || {
+            s3 += ", world";
+            println!("{}", s3);
+        };
+        c3();
+        c3();
+        // println!("{}", s3);
+
+    }
+
+    #[test]
+    fn test_move_ex() {
+        fn call<F: FnOnce()>(f: F) { f() }
+        let mut x = 0;
+        let inc_x = || x += 1;
+        // inc_x();
+        // inc_x();
+        call(inc_x);
+        // call(inc_x);
+
+        let mut x = 0;
+        let inc_x = move || x += 1;
+        // inc_x();
+        // inc_x();
+        call(inc_x);
+        call(inc_x);
+
+        let mut x = vec![];
+        let append_x = move || x.push(32);
+        call(append_x);
+        // call(append_x);
+
+        let c = || { println!("hh"); };
+        c();
+        c();
+        c();
     }
 }
