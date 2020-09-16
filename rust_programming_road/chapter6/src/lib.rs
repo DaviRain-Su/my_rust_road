@@ -739,4 +739,315 @@ mod closure {
         c();
         c();
     }
+
+    #[test]
+    fn box_closure_example(){
+        /// Box<Fn()>是一个trait对象，吧闭包放到Box<T>中就可以构建一个闭包的trait
+        /// 对象，然后就可以当做类型来使用。
+        /// 
+        /// triat对象时动态分发的，在运行时通过查找虚表来确定调用哪个闭包。
+        fn boxed_closure(c: &mut Vec<Box<dyn Fn()>>) {
+            let s = "second";
+            c.push(Box::new(|| 
+                println!("first")
+            ));
+            // 闭包默认是以不可变借用的方式捕获了环境变量s，但是这里需要将闭包装箱，
+            // 在之后的iter_call函数中调用，所以这里必须使用move关键字将s的所有权转移到闭包中。
+            // 因为变量s是复制语义类型，所以该闭包捕获的是原始变量s的副本。
+            c.push(Box::new(move || 
+                println!("{}", s)
+            ));
+            c.push(Box::new(
+                || println!("third")
+            ));
+        }
+
+        let mut c = vec![];
+        boxed_closure(&mut c);
+        for f in c {
+            f();
+        }
+
+        // 像这种在函数boxed_closure调用之后才会使用的闭包，叫做逃逸闭包。
+        // 因为该闭包捕获的环境变量”逃离“了boxed_closure函数的栈帧，所以在函数
+        // 栈帧销毁之后依然可用。
+        // 与之对应的，如果是跟随函数一起调用的闭包，则是非逃逸闭包。
+
+    }
+
+    #[test]
+    /// 静态分发实现
+    fn closure_as_para_static_dispatch_example(){
+        // 这里的use语句可有可无，因为Fn并不受triat孤儿规则的限制，
+        use std::ops::Fn;
+
+        trait Any {
+            // 在这个tira中声明了泛型函数any，该函数F的triat限定为
+            // Fn(u32) -> bool, 这种形式更像函数指针
+            // 函数指针也是默认实现了Fn, FnMut, FnOnce这三个triat。
+
+            // 在where从句中对Self做了Sized限定，这意味着，当Any被作为trait对象使用时，
+            // 该方法不能被动态调用，这属于一种优化策略。
+            // any方法的作用是，会迭代传入的闭包，依次调用，如果满足闭包表达式中指定的条件，
+            // 则返回true，否则返回false。
+            fn any<F>(&self, f: F) -> bool 
+                where Self: Sized, F: Fn(u32) -> bool;
+        }
+
+        impl Any for Vec<u32> {
+            fn any<F>(&self, f: F) -> bool 
+            where Self: Sized, F: Fn(u32) -> bool
+            {
+                for &x in self {
+                    if f(x) {
+                        return true;
+                    }
+                }
+                false
+            }
+        }
+
+        let v = vec![1u32, 2, 3];
+        let b = v.any(|x| x == 3);
+        println!("{:?}", b);
+    }
+
+    #[test] 
+    fn function_impl_fns(){
+        fn call<F>(closure: F) -> i32 
+        where F: Fn(i32) -> i32 {
+            closure(1)
+        }
+        fn counter(i: i32) -> i32 { i + 1}
+        
+        // 函数指针当作闭包参数传入call函数，代码可以正常编译运行，这是因为此函数
+        // 指针counter也实现了Fn
+
+        let result = call(counter);
+        assert_eq!(2, result);
+    }
+
+    #[test]
+    /// triat动态分发
+    fn closure_as_para_dyn_dispatch_example(){
+        trait Any {
+            // f: &（Fn(u32) ->bool) 也是可以的
+            fn any(&self, f: Box<dyn Fn(u32)-> bool>) -> bool;
+        }
+        impl Any for Vec<u32> {
+            fn any(&self, f: Box<dyn Fn(u32)-> bool>) -> bool {
+                for &x in self {
+                    if f(x) {
+                        return true;
+                    }
+                }
+                false
+            }
+        }
+
+        let v = vec![1, 2, 3];
+        let b = v.any(Box::new(|x| x == 3));
+        println!("{}", b);
+    }
+
+    #[test]
+    fn closure_as_return_value() {
+        // 这的闭包指定的是Fn，可被多次调用
+        fn square() -> Box<dyn Fn(i32) -> i32> {
+            Box::new(|i| i*i)
+        }
+        let square = square();
+        assert_eq!(4, square(2));
+        assert_eq!(9, square(3));
+    }
+    // 如果希望只调用下一是不是可以直接指定FnOnce？
+    #[test]
+    fn closure_as_return_fnonce(){
+        // fn square() -> Box<dyn FnOnce(i32) -> i32> {
+        fn square() -> impl FnOnce(i32) -> i32 {
+            Box::new(|i| i * i)
+        }
+        let square = square();
+        assert_eq!(4, square(2));
+        // assert_eq!(9, square(3)); 
+    }
+    #[test]
+    fn advance_closure_example(){
+        use std::fmt::Debug;
+        trait DoSomething<T> {
+            fn do_sth(&self, value: T);
+        }
+        impl<'a, T: Debug> DoSomething<T> for &'a usize {
+            fn do_sth(&self, value: T ){
+                println!("{:?}", value);
+            }
+        }
+
+        fn foo(b: Box<dyn for<'f> DoSomething<&'f usize>>){
+            let s : usize = 10;
+            b.do_sth(&s);
+        }
+        let x = Box::new(&2usize);
+        foo(x);
+    }
+
+    #[test]
+    fn advance_closure_example1(){
+        struct Pick<F> {
+            data: (u32, u32),
+            func: F,
+        }
+
+        impl<F> Pick<F> 
+            where F: for<'f> Fn(&'f (u32, u32)) -> &'f u32 {
+            fn call(&self) -> &u32{
+                (self.func)(&self.data)
+            }
+        }
+
+        fn max(data: &(u32, u32)) -> &u32 {
+            if data.0 > data.1 {
+                &data.0 
+            }else {
+                &data.1
+            }
+        }
+
+        let elm = Pick{ data: (3, 1), func: max};
+        println!("{}", elm.call());
+    }
+
+    #[test]
+    fn define_inner_iterator(){
+        trait InIterator<T: Copy> {
+            fn each<F: Fn(T) -> T> (&mut self, f: F);
+        }
+        impl <T: Copy> InIterator<T> for Vec<T> {
+            fn each<F: Fn(T) -> T> (&mut self, f: F) {
+                let mut i = 0;
+                while i < self.len() {
+                    self[i] = f(self[i]);
+                    i += 1;
+                }
+            }
+        }
+
+        let mut v = vec![1, 2, 3];
+        v.each(|i| i * 3);
+        println!("{:?}", v);
+    }
+
+    #[test]
+    fn test_for_example() {
+        let v = vec![11, 2, 3, 4, 5, 6, 7];
+        for i in v.iter() {
+            println!("{}", i);
+        }
+
+        {
+            let mut _iterator = v.iter();
+            loop {
+                match _iterator.next() {
+                    Some(i) => {
+                        println!("{}",i);
+                    }
+                    None => break,
+                }
+            }
+        }
+        for i in v.iter() {
+            println!("{}", i);
+        }
+    }
+
+
+    #[test]
+    fn define_iterator_example1(){
+        trait Iterator {
+            type Item;
+            fn next(&mut self) -> Option<Self::Item>;
+        }
+        struct Counter {
+            count : usize,
+        }
+        impl Iterator for Counter {
+            type Item  = usize;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.count += 1;
+                if self.count < 6 {
+                    Some(self.count)
+                }else {
+                    None
+                }
+            }
+        }
+
+        let mut counter = Counter{ count: 0};
+
+        while let Some(i) = counter.next(){
+            println!("{}", i);
+        }
+    }
+
+    #[test]
+    fn test_size_hint() {
+        let a = [1, 2, 3];
+        let mut iter = a.iter();
+        while let Some(_) = iter.next() {
+            println!("{:?}", iter.size_hint())
+        }
+    }
+
+    #[test]
+    fn append_string() {
+        let mut message = "Hello".to_string();
+        message.extend(&[' ', 'R', 'u', 's', 't']);
+        println!("{}", message);
+    }
+
+    #[test]
+    fn test_slice() {
+        // 声明了slice类型的数组，该类型的数组使用for循环时，并不能自动转换为迭代器，
+        // 因为并没有为[T]类型实现IntoIterator，而只是为&'a [T]和&'a mut[T]类型实现了
+        // IntoIterator，相应的into_iter方法内部实现也分别调用了iter和iter_mut方法，
+        // 也就是说for循环中使用&arr可以自动转换为迭代器， 而无须显式地调用iter方法。 
+        // 用iter或iter_mut方法可以将slice类型的数组转换为Iter或IterMut迭代器。
+        let arr = [1, 2, 3, 4, 5];
+        for i in &arr{
+            println!("{}", i);
+        }
+        println!("{:?}", arr);
+
+        let mut arr = [1, 2, 3, 4, 5];
+        for i in arr.iter_mut() {
+            *i += 1;
+        }
+        println!("{:?}", arr);
+    }
+
+    #[test]
+    fn test_map() {
+        let a = [1, 2, 3, 4];
+        let mut iter = a.into_iter().map(|x| x * 2);
+        while let Some(i) = iter.next() {
+            println!("{}", i);
+        }
+    }
+
+    #[test]
+    fn test_iter_example() {
+        let arr1 = [1, 2, 3, 4, 5, 6];
+        let c1 = arr1.iter().map(|x| 2 * x).collect::<Vec<i32>>();
+        println!("c1 = {:?}", c1);
+
+        let arr2 = ["1", "2", "3", "4", "j"];
+        let c2 = arr2.iter().filter_map(|x| x.parse().ok())
+            .collect::<Vec<i32>>();
+        println!("c2 = {:?}", c2);
+
+        let arr3 = ["a", "b", "v"];
+        for (index, val) in arr3.iter().enumerate() {
+            println!("index : {}, val: {}", index, val);
+        }
+    }
 }
