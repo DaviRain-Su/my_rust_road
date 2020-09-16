@@ -1050,4 +1050,180 @@ mod closure {
             println!("index : {}, val: {}", index, val);
         }
     }
+
+    #[test]
+    fn test_example(){
+        let a = vec![1, 2, 3];
+        let b = vec![1, 2, 3];
+        let ret = a.iter().any(|x| *x != 2);
+        println!("{}", ret);
+        let sum = a.iter().fold(0, |acc, x| acc + x);
+        let sum1 = b.into_iter().fold(0, |acc, x| acc + x);
+        println!("sum = {}", sum);
+        println!("sum1 = {}", sum1);
+        
+    }
+
+    #[test]
+    fn test_collect() {
+        use std::iter::FromIterator;
+        #[derive(Debug)]
+        struct MyVec(Vec<i32>);
+        impl MyVec {
+            pub fn new() -> Self {
+                Self(Vec::new())
+            }
+            pub fn add(&mut self, elem: i32) {
+                self.0.push(elem);
+            }
+        }
+
+        impl FromIterator<i32> for MyVec {
+            fn from_iter<I: IntoIterator<Item = i32>>(iter: I) -> Self {
+                let mut c = MyVec::new();
+                for i in iter {
+                    c.add(i);
+                }
+                c 
+            }
+        }
+
+        let iter = (0..5).into_iter();
+        let c = MyVec::from_iter(iter);
+        println!("{:?}", c);
+        let c = (0..5).into_iter();
+        let c: MyVec = c.collect();
+        println!("{:?}", c);
+        let c = (0..5).into_iter();
+        let c = c.collect::<MyVec>();
+        println!("{:?}", c);
+    }
+}
+
+mod myiter {
+    #[derive(Debug, Clone)]
+    #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+    pub struct Step<I> {
+        iter: I,
+        skip: usize,
+    }
+
+    impl<I> Iterator for Step<I> 
+        where I: Iterator,
+    {
+        type Item = I::Item;
+        fn next(&mut self) -> Option<I::Item> {
+            let elt = self.iter.next();
+            if self.skip > 0 {
+                self.iter.nth(self.skip-1);
+            }
+            elt
+        }
+    }
+
+    pub fn step<I>(iter: I, step: usize) -> Step<I> 
+        where I: Iterator,
+    {
+        assert!(step != 0);
+        Step{
+            iter: iter,
+            skip: step - 1,
+        }
+    }
+    
+    pub trait IterExt: Iterator {
+        fn step(self, n: usize) -> Step<Self> 
+        where Self: Sized 
+        {
+            step(self, n)
+        }
+    }
+    impl<T: ?Sized> IterExt for T where  T: Iterator {}
+
+    #[test]
+    fn test_ex1() {
+        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let sum = arr.iter().step(2).fold(0, |acc, x| acc + x);
+        println!("sum = {}", sum);
+    }
+}
+
+mod myPosition{
+    #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+    #[derive(Debug)]
+    pub struct Positions<I, F> {
+        iter: I,
+        f: F,
+        count: usize,
+    }
+    pub fn positions<I, F>(iter: I, f: F) -> Positions<I, F> 
+        where I: Iterator,
+        F : FnMut(I::Item) -> bool,
+    {
+        Positions{
+            iter,
+            f,
+            count: 0,
+        }
+    }
+
+    impl<I, F> Iterator for Positions<I, F> 
+        where I: Iterator,
+        F: FnMut(I::Item) -> bool,
+    {
+        type Item = usize;
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some(v) = self.iter.next() {
+                let i = self.count;
+                self.count = i + 1;
+                if (self.f)(v) {
+                    return Some(i);
+                }
+            }
+            None
+        }
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            (0, self.iter.size_hint().1)
+        }
+    }
+    impl<I, F> DoubleEndedIterator for Positions<I, F> 
+        where I: DoubleEndedIterator + ExactSizeIterator,
+        F: FnMut(I::Item) -> bool,
+    {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            while let Some(v) = self.iter.next_back() {
+                if (self.f)(v) {
+                    return Some(self.count + self.iter.len())
+                }
+            }
+            None
+        }
+    }
+
+    pub trait Itertools : Iterator {
+        fn positions<P>(self, predicate: P) -> Positions<Self, P> 
+            where Self: Sized,
+            P: FnMut(Self::Item) -> bool,
+            {
+                positions(self, predicate)
+            }
+    }
+    impl<T: ?Sized> Itertools for T where T: Iterator {}
+
+    #[test]
+    fn test_ex(){
+        let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let r = data.iter().positions(|v| v % 3 == 0);
+        // println!("r = {:?}", r);
+        let rev_r = data.iter().positions(|v| v %3 == 0).rev();
+        for i in r { 
+            println!("{:?}", i); // 2 5 8
+        }
+        println!();
+        for i in rev_r {
+            println!("{:?}", i); // 8 5 2
+        }
+    }
+    
+
 }
