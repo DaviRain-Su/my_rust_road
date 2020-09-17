@@ -1227,3 +1227,20 @@ mod myPosition{
     
 
 }
+
+mod programming_rust {
+    #[test]
+    fn test_array(){
+        let mut arr = [3, 2, 1];
+        println!("{:?}", arr); 
+        arr.sort();
+        println!("{:?}", arr);
+    }
+    #[test]
+    fn test_fnonce () {
+        let s = "hello".to_string();
+        let c = || s ;
+        c();
+        // c();
+    }
+}
