@@ -27,11 +27,11 @@ struct Opt {
 #[derive(Debug)]
 struct CustomError(String);
 
-impl std::fmt::Display for CustomError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+// impl std::fmt::Display for CustomError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self.0)
+//     }
+// }
 
 // impl From<io::Error> for CustomError {
 //     fn from(err : io::Error) -> Self {
@@ -96,6 +96,7 @@ fn main() -> Result<()>{
 
     let len = reader.read_to_string(&mut content)
         .with_context(|| format!("Could not read file `{:?}`", &args.path))?;
+        
 
     trace!("{}",len);
     
