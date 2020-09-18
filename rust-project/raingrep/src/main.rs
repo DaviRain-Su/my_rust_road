@@ -24,7 +24,6 @@ struct Opt {
 struct CustomError(String);
 
 fn main() -> Result<(), CustomError> {
-    env_logger::init();
     trace!("start raingrep");
 
     let args = Opt::from_args();
