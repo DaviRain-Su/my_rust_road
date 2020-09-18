@@ -1,0 +1,25 @@
+[package]
+name = "raingrep"
+version = "0.1.0"
+authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
+license = "MIT"
+description = "A tool to search file"
+readme = "README.md"
+homepage = "https://github.com/DaviRain-Su/my_rust_road/tree/master/rust-project/grrs"
+repository = "https://github.com/DaviRain-Su/my_rust_road/tree/master/rust-project/grrs"
+keywords = ["cli", "search", "demo"]
+categories = ["command-line-utilities"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+structopt = "0.3.13"
+indicatif = "0.15.0"
+log = "0.4.0"
+env_logger = "0.7.1"
+
+[dev-dependencies]
+assert_cmd = "0.10"
+predicates = "1"
+tempfile = "3"
