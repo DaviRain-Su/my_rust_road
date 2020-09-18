@@ -1,5 +1,5 @@
 [package]
-name = "grrs"
+name = "raingrep"
 version = "0.1.0"
 authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
 description = "A tool to search file"
