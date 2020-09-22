@@ -28,6 +28,7 @@ pub trait Token {
     }
     fn get_text(&self) -> String { String::from("") }
 }
+
 use std::io::{ self, Read, Write, ErrorKind };
 
 enum ParseError {
@@ -37,7 +38,12 @@ enum ParseError {
 
 const TOKEN_EOF : i32 = -1;         // end of file
 const EOL : &'static str = "\\n";   // end of line
-static REGEPAT : &'static str = "\\s*( (//.*) | ([0-9]+) | (\"(\\\\\"|\\\\\\\\|\\\\n|[^\"])*\") | [A-Z_a-z][A-Z_a-z0-9]*|==|<=|>=|&&|\\|\\||\\p{Punct})?";
+static REGEPAT : &'static str 
+    = "\\s*( (//.*) | ([0-9]+) | (\"(\\\\\"|\\\\\\\\|\\\\n|[^\"])*\") | ([A-Z_a-z][A-Z_a-z0-9]*|==|<=|>=|&&|\\|\\||\\p{Punct}) )?";
+
+// const pat1 : &str = "([0-9]+)";
+// const pat2 : &str = "(\"(\\\\\"|\\\\\\\\|\\\\n|[^\n])*\")";
+// const pat3 : &str = "[]";
 struct Lexer<R : Read> {
     has_more : bool,
     reader : R,
@@ -59,7 +65,9 @@ impl <R : Read> Lexer<R> {
         unimplemented!()
     }
 
-    fn add_token(&self, line_no : i32) -> Result<(), ParseError> {
+    fn add_token(&mut self, line_no : i32, matcher : regex::Captures) -> Result<(), ParseError> {
+        let m = matcher.get(1);
+        
         unimplemented!()
     }
     fn to_string_literal(s : String) {
@@ -96,6 +104,7 @@ struct Id {
     text: String, 
     line_number : i32,
 }
+
 impl Id {
     pub fn new(text: String, line_number: i32) -> Self {
         Self {
