@@ -1,4 +1,8 @@
 pub mod anamil;
+
+pub use anamil::cat;
+pub use anamil::dog;
+
 #[cfg(test)]
 mod tests {
     use crate::anamil::cat;
