@@ -284,20 +284,19 @@ fn test_iter_append() {
     println!("{}", message);
 }
 
-
 /// 插入字符串
-/// 
+///
 /// 如果想要从字符串的某个位置开始插入一段字符串，则需要使用insert, insert_str方法
 ///
-/// 
+///
 /// insert方法的参数为要插入的位置和字符
 /// insert_str方法的参数为要插入的位置和字符串切片
-/// 
+///
 /// 需要注意的是， insert和 insert_str是基于字节序列的索引记性操作的，其内部实现会通过
 /// is_char_boundary方法来判断插入的位置是否为合法的字符边界，如果插入的位置非法，则会引发线程崩溃。
-/// 
+///
 #[test]
-fn inset_str_ex () {
+fn inset_str_ex() {
     let mut s = String::with_capacity(3);
     s.insert(0, 'f');
     s.insert(1, 'o');
@@ -306,3 +305,110 @@ fn inset_str_ex () {
     println!("s = {}", s);
 }
 
+/// # 连接字符串
+///
+/// String 类型的字符串也实现了Add<&str> 和 AddAssign<&str>两个triat， 这意味着
+/// 可以直接使用"+", "+="操作符来连接字符串
+///
+/// &right实为，但是因为Sting类型实现爱内了Derf triat，所以这里执行加法操作时自动解引用为&str类型
+///
+#[test]
+fn join_str() {
+    let left = "the tao ".to_string();
+    let mut right = "Rust".to_string();
+    let s = left + &right;
+    println!("s = {}", s);
+    right += "!";
+    println!("right = {}", right);
+}
+
+/// # 更新字符串
+///
+/// 因为Rust不支持直接索引操作字符串中的字符，一些常规的算法在Rust中必然无法使用
+/// 比如想要修改某个字符串中复合条件的字符大写，就无法直接通过索引来操作，只能通过迭代器
+/// 的方式或者某些unsafe方法
+///
+///
+/// 通过into_bytes方法将字符串转换为Vec<u8>序列，这样就可以使用索引来修改它的内容，
+/// 然后通过String::from_utf8方法将Vec<u8>转换为Result<String, FromUtf8Error>
+/// 再通过unwrap()方法取出Result中的String字符串
+///
+// use std::ascii::{AsciiExt};
+#[test]
+fn update_str_ex() {
+    let s = String::from("foobar");
+    let mut result = s.into_bytes();
+    (0..result.len()).for_each(|i| {
+        if i % 2 == 0 {
+            result[i] = result[i].to_ascii_lowercase();
+        } else {
+            result[i] = result[i].to_ascii_uppercase();
+        }
+    });
+
+    println!("{}", String::from_utf8(result).unwrap());
+}
+
+/// Rust中的字符串永远都是UTF-8字节序列，在确定的字符串序列中，已知按字节
+/// 可以得到正确处理的情况下，也是可以用的。但是一般处理多字节字符串的情况比较多。
+/// 要合法正确的操作字符串，推荐使用按字符来迭代。
+#[test]
+fn update_str_ex2() {
+    let s = String::from("foobar");
+    let s: String = s
+        .chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i % 2 == 0 {
+                c.to_lowercase().to_string()
+            } else {
+                c.to_uppercase().to_string()
+            }
+        })
+        .collect();
+
+    println!("s = {}", s);
+}
+
+/// # 删除字符串
+/// 
+/// Rust标准库中提供了一些专门用于删除字符串的方法
+///
+/// 如果要删除字符串中某个位置的字符，则可以直接使用标准库提供的remove方法，
+/// remove的参数为该字符的起始索引位置，remove也是按字节处理字符串，如果给定
+/// 的索引位置不是合法的字符边界，怎么线程就会崩溃，
+/// 
+/// pop方法可以将字符串结尾的字符依次弹出，并返回该字符
+/// 
+/// truncate方法，该方法接受索引位置为参数，并将以次索引位置开始到结尾的字符全部移除，
+/// truncate方法同样是按字节进行操作的，所以使用时需要注意，如果给定的索引位置不是合法的字符边界，
+/// 则同样会引发线程崩溃。
+/// 
+/// clear是truncate方法的语法糖，只要truncate的参数设置为0
+/// 
+/// drain方法来移除指定范围内的字符
+/// drain方法会返回Drain迭代器，可以通过消费Drain迭代器来获得移除的那段字符串
+/// 
+#[test]
+fn delete_str_ex() {
+    let mut s = String::from("hello");
+    s.remove(3); 
+    println!("s = {}", s);
+    println!("{:?}", s.pop());
+    println!("{:?}", s.pop());
+    println!("{:?}", s.pop());
+    println!("s = {}", s);
+    let mut s = String::from("hello");
+    s.truncate(3);
+    println!("s = {}", s);
+    s.clear();
+    println!("s = {}", s);
+    let mut s = String::from("a is alpha, b is beta");
+    let beta_offset = s.find('b').unwrap_or(s.len());
+    let t  : String = s.drain(..beta_offset).collect();
+    println!("t = {}", t);
+    println!("s = {}", s);
+    let t : String = s.drain(..).collect();
+    println!("t = {}", t);
+    println!("s = {}", s);
+}
