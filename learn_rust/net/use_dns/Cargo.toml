@@ -1,0 +1,11 @@
+[package]
+name = "use_dns"
+version = "0.1.0"
+authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+trust-dns-resolver = "0.19.5"
+trust-dns = "0.19.5"
