@@ -412,3 +412,16 @@ fn delete_str_ex() {
     println!("t = {}", t);
     println!("s = {}", s);
 }
+
+/// # 字符串的查找
+/// 
+/// 字符串匹配操作
+/// 
+/// - 存在性判断， contains, start_with, ends_with
+/// - 位置匹配 find, rfind
+/// - 分割字符串， split, rsplit, split_terminator, rsplit_terminator, splitn, rsplitn
+/// - 捕获匹配
+#[test]
+fn test_find_ex() { ffff 
+
+}
