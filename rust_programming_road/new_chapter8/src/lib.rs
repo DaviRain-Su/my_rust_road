@@ -262,21 +262,21 @@ fn test_str_ex3() {
 #[test]
 fn test_str_three_part() {
     let mut a = String::from("foorbar");
-    println!("{:p}", a.as_ptr());   // 0x7ff2b8d04250
-    println!("{:p}", &a);           // 0x7000012ee588
+    println!("{:p}", a.as_ptr()); // 0x7ff2b8d04250
+    println!("{:p}", &a); // 0x7000012ee588
     assert_eq!(a.len(), 7); // 注意这是字节数
     a.reserve(10); // rserve方法可以为字符串再次分配容量
     assert_eq!(a.capacity(), 17);
 }
 
 /// 创建字符串的多个方法
-/// 
+///
 #[test]
 fn test_construct_string() {
     // 1. Sting::new()
     let string = String::new();
     assert_eq!("", string);
-    
+
     // 2. String::from()
     let string = String::from("hello rust");
     assert_eq!("hello rust", string);
@@ -284,11 +284,8 @@ fn test_construct_string() {
     let string = String::with_capacity(10);
     assert_eq!("", string);
 
-    let str : &'static str = "the tao of rust";
-    let string : String = str
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .collect();
+    let str: &'static str = "the tao of rust";
+    let string: String = str.chars().filter(|c| !c.is_whitespace()).collect();
     assert_eq!("thetaoofrust", string);
     // to_owned
     // Creates owned data from borrowed data, usually by cloning.
@@ -310,21 +307,20 @@ fn test_construct_string() {
     let string = str.to_string();
     let str = &string[11..15];
     assert_eq!("rust", str);
-    
 }
 
 /// 8.1.4 字符串的两种处理方式
-/// 
+///
 /// rust中的字符串不能使用索引访问其中的字符，因为字符串是UTF-8字节序列，
 /// 这里说到底还是返回字节还是码点的问题，
-/// 
+///
 /// rust分别提供了bytes和chars两个方法来分别返回按字节和按字符迭代的迭代器。
-/// 
+///
 /// 所以，在Rust中对字符串的操作大致分为两种方式：按字节处理和按字符处理
-/// 
-/// 
+///
+///
 #[test]
-fn test_opeator_two_way(){
+fn test_opeator_two_way() {
     let str = "bool";
     // chars
     let mut chars = str.chars();
@@ -342,7 +338,7 @@ fn test_opeator_two_way(){
 /// 访问字符的两种方式， get, get_mut
 /// 可以通过索引范围来获取字串切片，并且Rust默认会
 /// 检查字符串的序列是否为有效的UTF-8序列
-/// 
+///
 #[test]
 fn test_observe_two_way() {
     let mut v = String::from("hello");
@@ -354,7 +350,7 @@ fn test_observe_two_way() {
 
 /// 字符串内建的split_at和split_at_mut方法分割字符串
 /// 需要注意的是，一定要使用合法的字符串边界索引，否则会引起线程崩溃
-/// 
+///
 #[test]
 fn test_split_example() {
     let s = "Per Martin-lof";
@@ -364,13 +360,13 @@ fn test_split_example() {
 }
 
 /// ## 8.1.5 字符串的修改
-/// 
+///
 /// 一般情况下，如果需要修改字符串，则使用Strign类型，修改字符串大致分为追加、插入、连接、更新和删除5中情形。
-/// 
+///
 /// ### 追加字符串
-/// 
+///
 /// 对于追加的情形，Rust提供了push和push_str两个方法
-/// 
+///
 #[test]
 fn test_str_push() {
     let mut hello = String::from("Hello, ");
@@ -380,28 +376,28 @@ fn test_str_push() {
 }
 
 /// 通过迭代器为String追加字符串，因为String实现了Extend迭代器
-/// 
+///
 #[test]
 fn test_extend_str() {
     let mut message = String::from("hello");
-    message.extend([',', 'r','u'].iter());
+    message.extend([',', 'r', 'u'].iter());
     message.extend("st ".chars());
     message.extend("w o r l d".split_whitespace());
     assert_eq!("hello,rust world", &message);
 }
 
 /// 插入字符串
-/// 
+///
 /// 通过insert ---> char
 /// insert_str ----> &str
-/// 
+///
 /// 需要注意的是，insert, insert_str是基于字节序列
 /// 的索引进行操作的，其内部实现会通过is_char_boundary方法
 /// 来判断插入的位置是否为合法的字符边界，如果插入的位置是非法的，则会引发线程
 /// 崩溃。
-/// 
+///
 #[test]
-fn test_insert_string () {
+fn test_insert_string() {
     let mut s = String::with_capacity(3);
     s.insert(0, 'f');
     s.insert(1, 'o');
@@ -411,10 +407,10 @@ fn test_insert_string () {
 }
 
 /// 连接字符串
-/// 
+///
 /// String 类型的字符串也实现了Add<&str> 和AddAssign<&str>
 /// 两个triat，这意味着可以使用"+", "+="操作符来连接字符串
-/// 
+///
 #[test]
 fn test_add_string() {
     let left = "the tao".to_string();
@@ -425,44 +421,46 @@ fn test_add_string() {
 }
 
 /// ### 更新字符串
-/// 
+///
 /// 因为Rust不支持直接按索引操作字符串中的字符，一些常规的算法在Rust中必然无法使用，
 /// 比如像修改某个字符串中符合条件的字符为大写，就无法直接通过索引来操作，只能通过迭代器的方法或者某些unsafe方法
-/// 
+///
 #[test]
-fn test_update_string () {
+fn test_update_string() {
     let s = String::from("foobar");
     let mut result = s.into_bytes();
-    (0..result.len()).for_each(|i|{
+    (0..result.len()).for_each(|i| {
         if i % 2 == 0 {
             result[i] = result[i].to_ascii_lowercase();
-        }else {
+        } else {
             result[i] = result[i].to_ascii_uppercase();
         }
     });
 
     println!("{}", String::from_utf8(result).unwrap());
 
-
     let s = String::from("foobar");
-    let s : String = s.chars().enumerate().map(|(i, c)|{
-        if i % 2 == 0 {
-            c.to_lowercase().to_string()
-        }else {
-            c.to_uppercase().to_string()
-        }
-    }).collect();
+    let s: String = s
+        .chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i % 2 == 0 {
+                c.to_lowercase().to_string()
+            } else {
+                c.to_uppercase().to_string()
+            }
+        })
+        .collect();
     println!("{}", s);
 }
 
-
-/// 删除字符串 
-/// 
+/// 删除字符串
+///
 #[test]
-fn test_delete_string () {
+fn test_delete_string() {
     let mut s = String::from("hello");
     // remove 也是按字节处理字符串的，如果给定的索引位置不是合法的字符边界，那么线程就会崩溃
-    s.remove(3);  
+    s.remove(3);
     assert_eq!("helo", s);
     // pop
     assert_eq!(Some('o'), s.pop());
@@ -478,9 +476,201 @@ fn test_delete_string () {
     assert_eq!("", s);
     let mut s = String::from("a is aplha, b is beta");
     let beta_ofset = s.find('b').unwrap_or(s.len());
-    let t : String = s.drain(..beta_ofset).collect();
+    let t: String = s.drain(..beta_ofset).collect();
     assert_eq!(t, "a is aplha, ");
     assert_eq!(s, "b is beta");
     s.drain(..);
     assert_eq!(s, "");
+}
+
+/// ### 8.1.6 字符串的查找
+///
+/// 分类：
+///
+/// - 存在性判断， contains, start_with, ends_with
+/// - 位置匹配，find, rfind.
+/// - 分割字符串, split, rspilt, split_terminator
+/// - 捕获匹配, matches, rmatches, match_indices, rmatch_indices
+/// - 删除匹配，trime_matches, trim_left_matches, trim_right_matches
+/// - 替代匹配， replace, replacen
+///
+/// 1. 存在性判断
+///
+/// 通过contains方法判断字符串中是否存在符合指定条件的字符，该方法返回bool类型
+///
+/// std::str模块中contains方法的源码展示
+///
+/// pub fn contains<'a, P: Pattern<'a>>(&'a self, pat: P) -> bool {
+///     core_str::StrExt::contains(self, pat)
+/// }
+/// contains的参数pat是一个泛型，并且有一个Pattern<'a>限定，
+/// Pattern<'a>是一个专门用于搜索&'a str字符串的模式triat. Rust中
+/// 的char类型， String， &str, &&str, &[char]类型， 以及FnMut(char) -> bool的闭包
+/// 均已实现了该triat，因为contains才可以接受不同类型的值作为参数。
+///  
+///
+///
+///
+#[test]
+fn test_contains() {
+    let bananas = "bananas";
+    // contains
+    // Returns true if the given pattern matches a sub-slice of this string slice.
+    // Returns false if it does not.
+    // The pattern can be a &str, char, a slice of chars, or a function or closure that determines if a character matches.
+    assert!(bananas.contains('a'));
+    assert!(bananas.contains("an"));
+    assert!(bananas.contains(char::is_lowercase));
+    // start_with
+    // Returns true if the given pattern matches a prefix of this string slice.
+    // Returns false if it does not.
+    assert!(bananas.starts_with('b'));
+    assert!(bananas.starts_with("bana"));
+    assert!(!bananas.starts_with("nana"));
+    // ends_with
+    // Returns true if the given pattern matches a suffix of this string slice.
+    // Returns false if it does not.
+    assert!(!bananas.ends_with("nana"));
+    assert!(bananas.ends_with("anas"));
+    assert!(!bananas.ends_with("nana"));
+}
+
+/// 2. 位置匹配
+///
+/// 如果想要查找指定字符串中字符所在的位置，则可以使用find方法，
+///
+/// find方法同样可以接受pattern参数，
+///
+/// find方法默认是从左向右按字符进行遍历查找的，最终返回Option<usize>类型的位置索引
+/// 如果没有找到，则会返回None
+///
+/// rfind方法，表示从右到作来匹配字符串
+///
+#[test]
+fn test_finds() {
+    let s = "love 老虎 leopard";
+    assert_eq!(s.find('v'), Some(2));
+    assert_eq!(s.find('老'), Some(5));
+    assert_eq!(s.find('虎'), Some(8));
+    assert_eq!(s.find("leopard"), Some(12));
+    assert_eq!(s.rfind('l'), Some(12));
+    assert_eq!(s.find(char::is_whitespace), Some(4));
+    assert_eq!(s.find(char::is_lowercase), Some(0));
+}
+
+/// 3 分割字符串
+///
+/// 通过制定的模式来分割字符串，使用split系列的方法
+///
+#[test]
+fn test_splits() {
+    let s = "love 老虎 leopard";
+    let v = s
+        .split(|c| (c as u32) >= (0x4E00 as u32) && (c as u32) <= (0x9FA5 as u32))
+        .collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "abc1defXghi"
+        .split(|c| c == '1' || c == 'X')
+        .collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "May had a little lambda"
+        .splitn(3, ' ')
+        .collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "A.B.".split(".").collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "A.B.".split_terminator('.').collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "A..B..".split(".").collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "A..B..".split_terminator('.').collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+}
+
+/// 4 捕获匹配
+///
+/// 在处理字符串时，最常见的一个需求就是得到字符串中匹配某个条件的字符，通常
+/// 通过正则表达式来完成。在Rust中，通过pattern参数配合matches系列的方法可以
+/// 获得同样的效果
+///
+#[test]
+fn test_matches() {
+    let v = "abcXXXabcYYYabc".matches("abc").collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+    let v = "1abc2abc3"
+        .rmatches(char::is_numeric)
+        .collect::<Vec<&str>>();
+    println!("v = {:?}", v);
+
+    let v = "abcXXabcYYabc".match_indices("abc").collect::<Vec<_>>();
+    println!("v = {:?}", v);
+
+    let v = "abcXXabcYYabc".rmatch_indices("abc").collect::<Vec<_>>();
+    println!("v = {:?}", v);
+}
+
+/// 删除匹配
+///
+/// 在std::str模块中提供了trim系列方法，可以删除字符串两头的指定字符
+///
+///
+/// trim, trime_left, trim_right这三个方法并不能使用pattern参数，只是
+/// 固定地清楚空格、制表符和换行符。
+/// Rust提供了trim_matches系列方法支持pattern参数，可以指定自定义的删除规则
+#[test]
+fn test_trims() {
+    let s = " Hello\tworld\t";
+    assert_eq!("Hello\tworld", s.trim());
+    assert_eq!("Hello\tworld\t", s.trim_left());
+    assert_eq!(" Hello\tworld", s.trim_right());
+}
+
+/// trim_matches系列方法使用
+///
+#[test]
+fn test_trim_matches() {
+    assert_eq!("Hello\tworld\t".trim_matches('\t'), "Hello\tworld");
+    assert_eq!("11foo1bar11".trim_matches('1'), "foo1bar");
+    assert_eq!("123foo1bar123".trim_matches(char::is_numeric), "foo1bar");
+    let x: &[char] = &['1', '2'];
+    assert_eq!("12foo1bar12".trim_matches(x), "foo1bar");
+    assert_eq!(
+        "1foo1barXX".trim_matches(|c| c == '1' || c == 'X'),
+        "foo1bar"
+    );
+    assert_eq!("11foo1bar11".trim_left_matches('1'), "foo1bar11");
+    assert_eq!("123foo1bar123".trim_left_matches(char::is_numeric), "foo1bar123");
+    let x: &[char] = &['1', '2'];
+    assert_eq!("12foo1bar12".trim_left_matches(x), "foo1bar12");
+    assert_eq!(
+        "1foo1barXX".trim_right_matches(|c| c == '1' || c == 'X'),
+        "1foo1bar"
+    );
+}
+
+/// 替代匹配
+/// 
+/// 使用trim_matches系列方法可以满足基本的字符串删除匹配需求
+/// 但是其只能取去除字符串两头的字符，无法去除字符串内部包含的字符
+/// 可以通过reolace系列方法来实现此需求
+/// 
+#[test]
+fn test_replaces() {
+    let s = "Hello\tworld\t";
+    assert_eq!("Hello world ", s.replace("\t", " "));
+    assert_eq!("Hello world", s.replace("\t", " ").trim());
+    let s = "this is old old 123";
+    assert_eq!("this is new new 123", s.replace("old", "new"));
+    assert_eq!("this is new old 123", s.replacen("old", "new", 1));
+    assert_eq!("this is ald ald 123", s.replacen('o', "a", 3));
+    assert_eq!(
+        "this is old old new23",
+        s.replacen(char::is_numeric, "new", 1)
+    )
 }
