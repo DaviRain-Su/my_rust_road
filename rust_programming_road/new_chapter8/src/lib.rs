@@ -341,7 +341,7 @@ fn test_opeator_two_way() {
 ///
 #[test]
 fn test_observe_two_way() {
-    let mut v = String::from("hello");
+    let v = String::from("hello");
     assert_eq!(Some("h"), v.get(0..1));
     assert_eq!(Some("e"), v.get(1..2));
     assert_eq!(Some("llo"), v.get(2..));
@@ -627,8 +627,8 @@ fn test_matches() {
 fn test_trims() {
     let s = " Hello\tworld\t";
     assert_eq!("Hello\tworld", s.trim());
-    assert_eq!("Hello\tworld\t", s.trim_left());
-    assert_eq!(" Hello\tworld", s.trim_right());
+    // assert_eq!("Hello\tworld\t", s.trim_left());
+    // assert_eq!(" Hello\tworld", s.trim_right());
 }
 
 /// trim_matches系列方法使用
@@ -644,14 +644,14 @@ fn test_trim_matches() {
         "1foo1barXX".trim_matches(|c| c == '1' || c == 'X'),
         "foo1bar"
     );
-    assert_eq!("11foo1bar11".trim_left_matches('1'), "foo1bar11");
-    assert_eq!("123foo1bar123".trim_left_matches(char::is_numeric), "foo1bar123");
-    let x: &[char] = &['1', '2'];
-    assert_eq!("12foo1bar12".trim_left_matches(x), "foo1bar12");
-    assert_eq!(
-        "1foo1barXX".trim_right_matches(|c| c == '1' || c == 'X'),
-        "1foo1bar"
-    );
+    // assert_eq!("11foo1bar11".trim_left_matches('1'), "foo1bar11");
+    // assert_eq!("123foo1bar123".trim_left_matches(char::is_numeric), "foo1bar123");
+    // let x: &[char] = &['1', '2'];
+    // assert_eq!("12foo1bar12".trim_left_matches(x), "foo1bar12");
+    // assert_eq!(
+    //     "1foo1barXX".trim_right_matches(|c| c == '1' || c == 'X'),
+    //     "1foo1bar"
+    // );
 }
 
 /// 替代匹配
@@ -673,4 +673,229 @@ fn test_replaces() {
         "this is old old new23",
         s.replacen(char::is_numeric, "new", 1)
     )
+}
+
+/// 8.1.7 与其他类型相互转换
+/// 
+/// 将字符串转换为其他类型
+/// 
+/// 可以通过std::str模块中提供的parse泛型方法将字符串转换为指定类型
+/// 
+/// 
+/// 其实parse方法内部是使用FromStr::from_str方法来实现
+/// 转换的，FromStr是一个triat，其名命名复合Rust的一致性惯例
+/// 
+/// pub triat FromStr {
+///     type Err;
+///     fn from_str(s: &str) -> Reuslt<Self, Self::Err>;
+/// }
+/// 
+/// 在FromStr中定义了一个from_str方法，实现了此triat的类型，可以通过from_str
+/// 将字符串转换为该类型，返回一个Result类型，该类型会在解析失败时返回Err.
+/// Rust为一些基本的原生类型，布尔类型以及IP地址等少数类型实现了FromStr,
+/// 对于自定义的类型需要是自己手动实现
+/// 
+#[test]
+fn test_pase() {
+    let four: u32 = "4".parse().unwrap();
+    assert_eq!(4, four);
+    let four = "4".parse::<u32>();
+    assert_eq!(Ok(4), four);
+}
+
+/// 手动实现自定义结构体的例子
+/// 
+#[test]
+fn test_self_define_struct() {
+    // use std::convert::From;
+    // use std::str::FromStr;
+    // use std::num::ParseFloatError;
+    // #[derive(Debug, PartialEq)]
+    // struct Point {
+    //     x: i32, 
+    //     y: i32,
+    // }
+
+    // impl FromStr for Point {
+    //     type Err = ParseFloatError;
+    //     fn from_str(s: &str) -> Result<Self, Self::Err> {
+    //         let coords : Vec<&str> = s.trim_matches(|p| p == '{' || p == '}')
+    //                         .split(",")
+    //                         .collect();
+                        
+    //         let x_fromstr = coords[0].parse::<i32>()?;
+    //         let y_fromstr = coords[1].parse::<i32>()?;
+
+    //         Ok(Point { x: x_fromstr, y: y_fromstr })
+    //     }
+    // }
+
+    // let p = Point::from_str("{1, 2}");
+    // assert_eq!(p.unwrap(), Point{x: 1, y: 2});
+    // let p = Point::from_str("{3, u}");
+    // // Err(ParseIntError { kind: InvalidDigit})
+    // println!("{:?}", p);
+}
+
+
+/// 将其他类型转换为字符串
+/// 
+/// 如果想把其他类型转换为字符串，则可以使用format!宏
+/// format!宏与println!及write！宏类似，同样可以通过规则生成String
+/// 类型的字符串
+/// 
+/// 基本的格式化规则
+/// 
+/// - 填充字符串宽度，格式为{:number}, 其中number表示数字，
+/// 如果number的长度小于字符串长度，则什么都不做；如果number的长度大于字符串的长度，
+/// 则会默认填充空格来扩展字符串的长度
+/// 
+/// - 截取字符串，格式{:.number}, 注意number前面有符号".", 
+/// number代表要截取的字符长度，也可以和填充格式配合使用
+/// 
+/// - 对齐字符串，格式为{:>}, {:^}, {:>}, 分别表示左对齐、位于中间和右对齐。
+/// 也可以和其他格式代码配合使用
+/// 
+/// 可以直接在冒号后面使用"="和"*"代替默认的空格填充，
+/// format!格式化字符串是按照字符来处理的，不管字符串多长，对于里面的Unicode码位都以单个字符来处理的。
+/// 
+#[test]
+fn test_format() {
+    let s = format!("{}Rust", "Hello");
+    println!("s = {}", s);
+    let s = format!("{:5}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:5.3}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:10}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:<12}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:>12}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:^12}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:^12.5}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:=^12.5}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:*^12.5}", "HelloRust");
+    println!("s = {}", s);
+    let s = format!("{:5}", "th\u{e9}");
+    println!("s = {}", s);
+
+}
+
+/// 关于整数和浮点数的格式化代码
+/// 
+/// 
+/// 针对整数提供的格式化代码
+/// 
+/// - 符号+, 表示强制输出整数的正负符号
+/// - 符号#, 用于显示进制的前缀，比如十六进制显示0x, 二进制显示0b
+/// - 数字0， 用于把默认填充的空格替换为数字0
+/// 
+/// 
+#[test]
+fn test_integer_format() {
+    let s = format!("{:+}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:+x}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:+#x}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:b}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:#b}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:#20b}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:<#20b}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:^#20b}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:>#15x}", 1234);
+    println!("s = {}", s);
+    let s = format!("{:>+015x}", 1234);
+    println!("s = {}", s);
+    
+
+}
+
+/// 关于浮点数，一个格式化代码
+/// 
+///  浮点数格式化主要注意以下两点
+/// - 指定小数点后的有效位，符号".“代表的是指定浮点数小数点后的有效位，
+/// 这是需要注意的是，在指定有效位是会四舍五入，
+/// - 科学计数法，使用{:e}可以将浮点数格式化为科学技术法的表示形式
+#[test]
+fn test_float_format() {
+    let s = format!("{:.4}",1234.5678);
+    println!("s = {}", s);
+    let s = format!("{:.2}", 1234.5618);
+    println!("s = {}", s);
+    let s = format!("{:.2}", 1234.5678);
+    println!("s = {}", s);
+    let s = format!("{:<10.4}", 1234.5678);
+    println!("s = {}", s);
+    let s = format!("{:^12.2}", 1234.5678);
+    println!("s = {}", s);
+    let s = format!("{:0^12.2}", 1234.5678);
+    println!("s = {}", s);
+    let s = format!("{:e}", 1234.5678);
+    println!("s = {}", s);
+}
+
+/// 以上所有的格式化规则，对于println!和write!宏均适用，
+/// 前面展示的都是字符串，整数和浮点数等内置类型的格式化，如果要对于自定义类型格式化，
+/// 则需要事先Display triat
+/// 
+#[test]
+fn test_self_define_type() {
+    use std::fmt::{self, Formatter,Display};
+    struct City {
+        name: &'static str, 
+        lat: f32,
+        lon: f32,
+    }
+
+    impl Display for City {
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+           let lat_c= if self.lat >= 0.0 { 'N' } else {'S' };
+           let lon_c = if self.lon >= 0.0 { 'E' } else {'W'};
+           write!(f, "{}: {:.3}{} {:.3}{}", 
+                self.name, self.lat.abs(), lat_c, self.lon.abs(), lon_c
+            ) 
+        }
+    }
+
+    let city = City{ name: "Beijing", lat: 39.90469, lon: -116.40717};
+    println!("city = {}", city);
+
+}
+
+
+/// 8.1.8 回顾
+/// 
+/// 问题是：有一个数字方阵，求出对角线位置的所有数字之和
+/// 
+/// 使用原生字符串声明语法r"...", 将此数字方阵定义为为字符串
+/// 然后按行遍历其字符即可得到结果
+/// 
+#[test]
+fn test_sum() {
+    let s = r"1234
+                    5678
+                    9876
+                    4321";
+    let (mut x, mut y) = (0,0);
+    for (idx, val) in s.lines().enumerate() {
+        let val = val.trim();
+        let left =val.get(idx..idx+1).unwrap().parse::<u32>().unwrap();
+        let right = val.get((3-idx)..(3 - idx+1)).unwrap().parse::<u32>().unwrap();
+         x += left;
+         y += right;
+    }
+
+    assert_eq!(38, x + y);
 }
