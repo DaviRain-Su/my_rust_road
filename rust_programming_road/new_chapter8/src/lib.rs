@@ -1455,3 +1455,105 @@ fn test_entry() {
     assert_eq!(map["next_leap_year"], 2020);
     assert_eq!(map.entry("current_year").key(), &"current_year");
 }
+
+/// 合并HashMap
+/// 
+/// 如果需要合并两个HashMap，则可以使用迭代器的方式。
+/// 
+/// 
+#[test]
+fn merge_hashmap() {
+    use std::collections::HashMap;
+    fn merge_extend<'a> (
+        map1: &mut HashMap<&'a str, &'a str>,
+        map2: HashMap<&'a str, &'a str>
+    )
+    {
+        map1.extend(map2);
+    }
+    fn merge_chain<'a> (
+        map1 : HashMap<&'a str, &'a str>,
+        map2: HashMap<&'a str, &'a str>
+    ) -> HashMap<&'a str, &'a str> {
+        map1.into_iter().chain(map2).collect()
+    }
+    fn merge_by_ref<'a>(
+        map: &mut HashMap<&'a str, &'a str>,
+        map_ref: &HashMap<&'a str, &'a str> 
+    ) {
+        map.extend(map_ref.into_iter()
+        .map(|(k, v)| (k.clone(), v.clone())))
+    }
+
+    let mut book_review1 = HashMap::new();
+    book_review1.insert("Rust Book", "good");
+    book_review1.insert("Programming Rust", "nice");
+    book_review1.insert("Tho Tao of Rust", "deep");
+    let mut book_review2 = HashMap::new();
+    book_review2.insert("Rust in Action", "good");
+    book_review2.insert("Rust Primer", "nice");
+    book_review2.insert("Matering Rust", "deep");
+    // merge_extend(&mut book_review1, book_review2);
+    // let book_review1 = merge_chain(book_review1, book_review2);
+    merge_by_ref(&mut book_review1, &book_review2);
+    for key in book_review1.keys() {
+        println!("{}", key);
+    }
+
+}
+
+
+/// HashMap底层实现原理
+/// 
+/// 实现一个HashMap的过程均可分为三大步骤：
+/// 
+/// - 实现一个Hash函数
+/// - 合理地解决Hash冲突
+/// - 实现HashMap的操作方法
+/// 
+/// Hash碰撞 (Hash Collision) 也叫做Hash冲突，是指两个元素通过Hash函数得到了相同的索引地址，该存储那一个是需要解决的问题，而这两个元素就叫做同义词。
+/// 
+/// 负载因子， 是存储的键值对数目与容量的比例。
+/// 
+/// HasH碰撞拒绝服务攻击(Hash Collsion Dos) 
+/// 这种攻击是一种基于各语言Hash算法的随机性而精心构造出来的增强Hash碰撞的手段，被
+/// 攻击的服务器CPU占用率会轻松地飙升到100%, 造成服务器的性能呈指数级下降。
+/// 
+/// 
+/// 在业界一共有四类解决Hash冲突的方法：外部拉链发、开放定址法、公共溢出区，再Hash法
+/// 
+/// 外部拉链法：并不直接在桶中存储键值对，它基于数组和链表的组合来解决冲突，每个Bucket都链接一个链表，当发生冲突时，将冲突的键值对插入链表中。
+/// 外部拉链法的优点在于方法简单，非同义词之间也不会产生聚集现象（相比于开放定址法），并且其空间结构是动态申请的，
+/// 所以比较适合无法确认表长的情况；缺点是链表指针需要额外的空间，并且遇到彭专拒绝服务时HashMap会退化为单链表。
+/// 
+/// 
+/// 开放定址法是指在发生冲突时直接去寻找下一个空的地址，只要底层的表足够大，
+/// 就总能找到空的地址，这种寻找下一个空地址的行为，叫做探测(Probe).
+/// 如何探测也是非常有讲究的，直接依次一个个地寻找叫做线性探测(Linear Probing)但是 他在处理冲突时很容易聚集在一起。
+/// 因此还有二次探测，应该算是目前最常用的一种探测方法。
+/// 开放定址的优点在于计算简单、快捷、处理方便；缺点是他会产生聚集现象，并且删除元素也会变得十分复杂。
+/// 
+/// 公共溢出区就是指建立一个独立的公共区，把冲突的键值对都放在其中。
+/// 再Hash法就是指替换另一种Hash函数来计算Hash值。
+/// 这两种方法不太常用。
+/// 
+/// 
+/// Rust采用的是开放定址法加线性探测，对于线性探测容易聚集哎一起的缺陷，
+/// Rust使用了罗宾汉(Robin Hood Hashing)算法来解决。在线性探测时，如果
+/// 遇到空通，则正常插入；如果遇到桶已经被占用，那么就要看占用这个桶的键值对是经历过
+/// 几次叹词才被插入该位置的，如果该键值对的探测次数比当前待插入的键值对的探测次数少，则它属于
+/// ”富裕“，就把当前的键值对插入该位置，再接着找下一个位置来安置被替换的”富翁“键值对。正是因为这种
+/// ”劫富济贫“的思路，这种算法此案被称为罗宾汉算法。
+/// 
+/// 
+/// 8.3. 理解容量
+/// 
+/// 容量，是指集合容器分配的内存容量
+/// 
+/// 大小，是指该集合中包含的元素数量，
+/// 
+/// 容量和内存分配有关系，大小只是衡量该集合容器中包含的元素。
+/// 当容量满了之后，这些集合容器都会自动扩容。
+fn test() {
+    println!("Test!!");
+}
