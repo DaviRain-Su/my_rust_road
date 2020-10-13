@@ -21,3 +21,6 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=0534a17b
 
 通过let关键字来创建变量，这是Rust语言从函数式语言中借鉴的语法形式。let创建的变量一般称为绑定(Binding), 它表明了标识符(Identifier）和值(Value)之间建立的一种关联关系。
 
+# 第9章 构建健壮的程序
+
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f0b4b4c8a9fe2be77739237378ea626f
