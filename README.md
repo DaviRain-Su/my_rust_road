@@ -24,3 +24,7 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=0534a17b
 # 第9章 构建健壮的程序
 
 https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f0b4b4c8a9fe2be77739237378ea626f
+
+# 并发
+
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d161cbe081b39d10168afa36f8cd890c
