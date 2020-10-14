@@ -25,6 +25,10 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=0534a17b
 
 https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f0b4b4c8a9fe2be77739237378ea626f
 
+# 第章 函数、闭包与迭代器
+
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=e19a6b47cd3cc38dc15843c73fbb748b
+
 # 并发
 
 https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d161cbe081b39d10168afa36f8cd890c
