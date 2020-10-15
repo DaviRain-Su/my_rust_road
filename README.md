@@ -27,7 +27,7 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f0b4b4c8
 
 # 第5章 所有权 
 
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=a227acf492eb22bb47f909b7d7a38b5d
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=25a43657beb962e51b763325ed5a6808
 
 # 第6 章 函数、闭包与迭代器
 
