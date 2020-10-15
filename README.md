@@ -36,3 +36,7 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=e19a6b47
 # 并发
 
 https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d161cbe081b39d10168afa36f8cd890c
+
+# 第十三章 超越安全边界
+
+https://play.rust-lang.org/?version=nightly&mode=debug&edition=2018&gist=9bfaf731313015216909f4402d431acc
