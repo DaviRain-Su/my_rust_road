@@ -1,0 +1,38 @@
+
+<html>
+  <head>
+    <style>
+      div {
+        width: 100px;
+        height: 100px;
+        background-color: red;
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <div></div>
+  </body>
+  <script>
+    let start = null;
+    let element = document.querySelector('div');
+
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      let progress = timestamp - start;
+      element.style.left = Math.min(progress / 10, 200) + 'px';
+      if (progress < 2000) {
+        window.requestAnimationFrame(step);
+      }
+    }
+
+    window.requestAnimationFrame(step);
+
+    // let start = performance.now();
+    //
+    // for (let i = 0; i < 10e7; ++i) {}
+    //
+    // // Time Span: 97.4949998781085 ms.
+    // console.log(`Time Span: ${performance.now() - start} ms`);
+  </script>
+</html>
