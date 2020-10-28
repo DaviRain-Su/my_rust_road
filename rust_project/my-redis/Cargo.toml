@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.3", features = ["full"] }
 mini-redis = "0.3"
+bytes = "0.6"
 
