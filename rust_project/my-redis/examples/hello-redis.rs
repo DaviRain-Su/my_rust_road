@@ -1,24 +1,38 @@
-use mini_redis::{client, Result};
+use mini_redis::{client};
+use bytes::Bytes;
+use tokio::sync::mpsc;
 
+#[derive(Debug)]
+enum Command {
+    Get {
+        key: String,
+    },
+    Set {
+        key: String, 
+        val: Bytes,
+    },
+}
 #[tokio::main]
-pub async fn main()  -> Result<()> {
-    // Open a connection to the mini-redis address. 
-    let mut client = client::connect("127.0.0.1:6379").await?;
+pub async fn main(){
 
-    // Set the key "hello" with value "world"
-    client.set("hello", "world".into()).await?;
-    client.set("davirain", "123".into()).await?;
+    // Create a new channel with a capacity of at most 32. 
+    let (mut tx, mut rx) = mpsc::channel(32);
 
-    // Get key "hello"
-    // let result = client.get("hello").await?.unwrap();
+    // Establish a connection to the server  
+    let mut client = client::connect("127.0.0.1:6379").await.unwrap();
 
-    // Converts a slice of bytes to a string slice. 
-    // let res = std::str::from_utf8(&result).unwrap();
+    {   
+        //Spawn two tasks, one gets a key, the other sets a key
+        let t1 = tokio::spawn(async {
+            client.get("hello").await;
+        });
+        t1.await.unwrap();
+    }
 
-    // println!("got value from the server, result = {}", res);
-    // get hello
-    println!("hello -- {:?}", client.get("hello").await?.unwrap());
-    // get davirain
-    println!("davirain --- {:?}", client.get("davirain").await?.unwrap());
-    Ok(())
+    // {
+    //     let t2 = tokio::spawn(async {
+    //         client.set("foo", "bar".into()).await;
+    //     });
+    //     t2.await.unwrap();
+    // }
 }
