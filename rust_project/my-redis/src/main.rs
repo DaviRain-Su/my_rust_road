@@ -9,7 +9,10 @@ async fn main() {
     loop {
         // The second item contains the IP and port of the new connection.
         let (socket, _) = listener.accept().await.unwrap();
-        process(socket).await;
+        
+        tokio::spawn(async move {
+            process(socket).await;
+        });
     }
 }
 
@@ -22,7 +25,7 @@ async fn process(socket: TcpStream) {
         println!("GOT: {:?}", frame);
 
         // Respond with an error 
-        let response = Frame::Error("error-unimplemented".to_string());
+        let response = Frame::Error("unimplemented".to_string());
         connection.write_frame(&response).await.unwrap();
     }
 }
