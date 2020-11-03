@@ -1,12 +1,16 @@
+use serde_derive::Deserialize;
+// use serde_derive::Serilize;
+use log::debug;
 
-#[derive(Debug)]
-enum Commands {
-    CD(Option<String>),
-    LS(Option<String>),
-    PUTS(Option<String>),
-    GETS(Option<String>),
-    REMOVE(Option<String>),
-    PWD,
+#[derive(Debug, Deserialize)]
+pub enum Commands {
+    CD(Option<Vec<String>>),
+    LS(Option<Vec<String>>),
+    PUTS(Option<Vec<String>>),
+    GETS(Option<Vec<String>>),
+    REMOVE(Option<Vec<String>>),
+    PWD(Option<String>),
+    OTHER(String),
 }
 
 impl Commands {

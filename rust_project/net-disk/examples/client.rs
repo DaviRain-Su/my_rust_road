@@ -7,6 +7,9 @@ use log::{debug, error, log_enabled, info, Level};
 
 
 mod cli;
+mod threadpool;
+mod command;
+
 
 fn main() {
     env_logger::init();
@@ -16,8 +19,11 @@ fn main() {
 
     let ip = config.get_ip();
     let port = config.get_port();
+    let thread_num = config.get_thread_num();
+
     debug!("ip = {}", ip);
     debug!("port = {}", port);
+    debug!("thread_num = {}", thread_num);
 
     let ip_port = format!("{}:{}", ip, port);
     debug!("ip_port = {}", ip_port);
@@ -31,7 +37,10 @@ fn main() {
 
         io::stdin().read_line(&mut input)
             .expect("Failed to read from stdin");
-
+        
+        let cmd = command::Commands::new(&input);
+        debug!("cmd = {:?}", cmd);
+        
         stream.write(input.as_bytes())
             .expect("Failed to write to server");
         
