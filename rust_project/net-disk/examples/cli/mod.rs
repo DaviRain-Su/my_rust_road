@@ -46,4 +46,7 @@ impl Config {
     pub fn get_port(&self) -> &str {
         self.port.as_ref().unwrap()
     }
+    pub fn get_ip_port(&self) -> String {
+        format!("{}:{}", self.get_ip(), self.get_port())
+    }
 }

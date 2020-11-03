@@ -22,7 +22,7 @@ pub enum Commands {
     OTHER(String),
 }
 
-fn handle_client(mut stream: TcpStream) -> Result<(), Error>{
+fn handle_client(stream: TcpStream) -> Result<(), Error>{
     debug!("Incomming connection from : {}", stream.peer_addr().unwrap());
 
     let mut buf  = Vec::new();
@@ -60,7 +60,7 @@ fn main() -> std::io::Result<()> {
     debug!("port = {}", port);
     debug!("thread_num = {}", thread_num);
 
-    let ip_port = format!("{}:{}", ip, port);
+    let ip_port = config.get_ip_port();
     debug!("ip_port = {}", ip_port);
 
     let listener = TcpListener::bind(ip_port)?;

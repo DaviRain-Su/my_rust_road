@@ -25,7 +25,7 @@ fn main() -> io::Result<()> {
     debug!("port = {}", port);
     debug!("thread_num = {}", thread_num);
 
-    let ip_port = format!("{}:{}", ip, port);
+    let ip_port = config.get_ip_port();
     debug!("ip_port = {}", ip_port);
     let mut stream = TcpStream::connect(ip_port).expect("Could not connect to server");
 
@@ -51,11 +51,6 @@ fn main() -> io::Result<()> {
             .expect("Could not read into buffer");
         
         let input: command::Commands = serde_json::from_slice(&buffer)?;
-        debug!("Response from server {:?}", input);
-        // let input = str::from_utf8(&buffer).expect("Could not write buffer as string");
-        // if input == "" {
-            // eprintln!("Empty response from server");
-        // }
-        // println!("Response from server {}", input);
+        debug!("Response from server {:?}", input);   
     }
 }
