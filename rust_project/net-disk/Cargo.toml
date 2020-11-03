@@ -8,3 +8,15 @@ edition = "2018"
 
 [dependencies]
 num_cpus = "*"
+mio = "*"
+serde = "*"
+serde_derive = "*"
+toml = "*"
+log = "*"
+env_logger = "*"
+
+[config]
+ip = "127.0.0.1"
+port = "2000"
+thread_num = "8"
+capacity = "10"

@@ -1,63 +1,29 @@
-
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::thread;
-use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
+use log::{debug, error, log_enabled, info, Level};
+mod threadloop;
+mod cli;
 
-// 线程池的实现
-pub trait FnBox {
-    fn call_box(self: Box<Self>);
-}
-
-impl <F: FnOnce()> FnBox for F {
-    fn call_box(self: Box<Self>) {
-        (*self)()
-    }
-}
-
-pub type Task = Box<dyn FnBox + Send >;
-
-// pub struct ThreadPool{
-//     tx: Option<Sender<Task>>,
-//     handles: Option<Vec<thread::JoinHandle<()>>>,
-// }
-
-// impl ThreadPool {
-//     pub fn new(number: usize) -> Self {
-//         let (tx, rx) =  channel::<Task>();
-//         let mut handles = vec![];
-
-//         let arx = Arc::new(Mutex::new(rx));
-
-//         for _ in 0..number {
-//             let arx = arx.clone();
-//             let handle = thread::spawn(move || {
-//                 while let Ok(task) = arx.lock().unwrap().recv() {
-//                     task.call_box();
-//                 }
-//             });
-//             handles.push(handle);
-//         }
-
-//         Self {
-//             tx: Some(tx),
-//             handles: Some(handles),
-//         }
-//     }
-// }
 
 fn main() {
-    let handles = ThreadPool::new(12);
-    let sender = handles.tx.unwrap().clone();
-    for _ in 0..40 {
-        sender.send(Box::new(|| {
-            println!("Hello world");
-        })).unwrap();
+    env_logger::init();
+    let config = cli::Config::new("./Cargo.toml");
+    // Use RUST_LOG=debug cargo run
+    debug!("config = {:?}", config);
+
+    
+    let pool = threadloop::ThreadPool::new(8);
+    let test_count = Arc::new(AtomicUsize::new(0));
+    for id in 0..42 {
+        // let test_count = test_count.clone();
+        pool.execute(move || {
+            // test_count.fetch_add(1, Ordering::Relaxed);
+            debug!("-{:02} -> Hello world", id);
+        });
     }
 
-    for id in handles.handles.unwrap() {
-        id.join().unwrap();
-    }
-    println!("Hello, world!");
+    pool.join();
+    // assert_eq!(42, test_count.load(Ordering::Relaxed));
+    debug!("result = {}", test_count.load(Ordering::Relaxed));
 }
