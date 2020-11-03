@@ -16,7 +16,6 @@ pub struct Config {
     ip : Option<String>,
     port: Option<String>,
     thread_num: Option<String>,
-    capacity: Option<String>,
 }
 
 impl Config {
@@ -35,8 +34,16 @@ impl Config {
             ip: cfg.config.ip,
             port: cfg.config.port,
             thread_num : cfg.config.thread_num,
-            capacity : cfg.config.capacity,
         }
-        
+    }
+
+    pub fn get_thread_num(&self) -> usize {
+        self.thread_num.as_ref().unwrap().parse::<usize>().unwrap()
+    }
+    pub fn get_ip(&self) -> &str {
+        self.ip.as_ref().unwrap()
+    }
+    pub fn get_port(&self) -> &str {
+        self.port.as_ref().unwrap()
     }
 }

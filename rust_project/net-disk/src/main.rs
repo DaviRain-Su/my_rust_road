@@ -12,8 +12,14 @@ fn main() {
     // Use RUST_LOG=debug cargo run
     debug!("config = {:?}", config);
 
-    
-    let pool = threadloop::ThreadPool::new(8);
+    let ip = config.get_ip();
+    let port = config.get_port();
+    let thread_num = config.get_thread_num();
+    debug!("ip = {}", ip);
+    debug!("port = {}", port);
+    debug!("thread_num = {}", thread_num);
+
+    let pool = threadloop::ThreadPool::new(thread_num);
     let test_count = Arc::new(AtomicUsize::new(0));
     for id in 0..42 {
         // let test_count = test_count.clone();
