@@ -10,17 +10,17 @@ use serde_json;
 
 mod threadloop;
 mod cli;
-
-#[derive(Debug, Deserialize, Serialize)]
-pub enum Commands {
-    CD(Option<Vec<String>>),
-    LS(Option<Vec<String>>),
-    PUTS(Option<Vec<String>>),
-    GETS(Option<Vec<String>>),
-    REMOVE(Option<Vec<String>>),
-    PWD(Option<String>),
-    OTHER(String),
-}
+mod command;
+// #[derive(Debug, Deserialize, Serialize)]
+// pub enum Commands {
+//     CD(Option<Vec<String>>),
+//     LS(Option<Vec<String>>),
+//     PUTS(Option<Vec<String>>),
+//     GETS(Option<Vec<String>>),
+//     REMOVE(Option<Vec<String>>),
+//     PWD(Option<String>),
+//     OTHER(String),
+// }
 
 fn handle_client(stream: TcpStream) -> Result<(), Error>{
     debug!("Incomming connection from : {}", stream.peer_addr().unwrap());
@@ -34,7 +34,7 @@ fn handle_client(stream: TcpStream) -> Result<(), Error>{
         if bytes_read == 0 {
             return Ok(());
         }
-        let input: Commands = serde_json::from_slice(&buf)?;
+        let input: command::Commands = serde_json::from_slice(&buf)?;
         debug!("input = {:?}", input);
 
         // stream.get_mut().write(&buf[..bytes_read])?;
