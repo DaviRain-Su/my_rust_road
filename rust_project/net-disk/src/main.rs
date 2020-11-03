@@ -1,24 +1,47 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::net::{TcpListener, TcpStream};
-use std::io::{self, Error, Read, Write};
-use std::thread;
-
+use std::io::{self, prelude::*, Error, Read, Write, BufReader};
 use log::{ debug, error, log_enabled, info, Level};
+use serde::{ Deserialize, Serialize};
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+use serde_json;
+
 mod threadloop;
 mod cli;
 
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Commands {
+    CD(Option<Vec<String>>),
+    LS(Option<Vec<String>>),
+    PUTS(Option<Vec<String>>),
+    GETS(Option<Vec<String>>),
+    REMOVE(Option<Vec<String>>),
+    PWD(Option<String>),
+    OTHER(String),
+}
 
 fn handle_client(mut stream: TcpStream) -> Result<(), Error>{
     debug!("Incomming connection from : {}", stream.peer_addr().unwrap());
 
-    let mut buf  = [0; 512];
+    let mut buf  = Vec::new();
+    let mut stream = BufReader::new(stream);
     loop {
-        let bytes_read = stream.read(&mut buf)?;
+        buf.clear();
+
+        let bytes_read = stream.read_until(b'\n',&mut buf)?;
         if bytes_read == 0 {
             return Ok(());
         }
-        stream.write(&buf[..bytes_read])?;
+        let input: Commands = serde_json::from_slice(&buf)?;
+        debug!("input = {:?}", input);
+
+        // stream.get_mut().write(&buf[..bytes_read])?;
+        stream.get_mut().write_all(serde_json::to_string(&input).unwrap().as_bytes())
+            .expect("Failed to write to server");
+        stream.get_mut().write_all(b"\n").expect("Failed to write to server");
+        stream.get_mut().flush()?;
     }
 }
 

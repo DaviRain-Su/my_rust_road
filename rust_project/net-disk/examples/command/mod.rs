@@ -1,8 +1,10 @@
+use serde::{ Deserialize, Serialize};
 use serde_derive::Deserialize;
-// use serde_derive::Serilize;
+use serde_derive::Serialize;
+use serde_json;
 use log::debug;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Commands {
     CD(Option<Vec<String>>),
     LS(Option<Vec<String>>),
@@ -26,9 +28,22 @@ impl Commands {
         let command = commands[0];
         let commands = commands.iter().map(|val| val.to_string()).collect::<Vec<String>>();
 
-        if command == "cd" && (commands_len == 1 || commands_len == 2) {
+        if command == "cd" && 
+        (      commands_len == 1  || commands_len == 2
+            // || (commands_len == 2 && commands[1] == "..".to_string()) 
+            // || (commands_len == 2 && commands[1] == ".".to_string())
+            // || (commands_len == 2 && commands[1] == "-".to_string())
+            // || (commands_len == 2 && commands[1] == "~".to_string())
+        )
+        {
             Commands::CD(Some(commands))
-        }else if command == "ls" && (commands_len == 2 || commands_len == 1) {
+        }else if command == "ls" && 
+        (      commands_len == 1 || commands_len == 2
+            // || (commands_len == 2 && commands[1] == "..".to_string())
+            // || (commands_len == 2 && commands[1] == ".".to_string())
+            // || (commands_len == 2 && commands[1] == "~".to_string())
+        ) 
+        {
             Commands::LS(Some(commands))
         }else if command == "puts" && commands_len == 2 {
             Commands::PUTS(Some(commands))

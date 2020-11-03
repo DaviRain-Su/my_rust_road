@@ -11,7 +11,7 @@ mod threadpool;
 mod command;
 
 
-fn main() {
+fn main() -> io::Result<()> {
     env_logger::init();
     let config = cli::Config::new("./Cargo.toml");
 
@@ -37,18 +37,25 @@ fn main() {
 
         io::stdin().read_line(&mut input)
             .expect("Failed to read from stdin");
-        
+
         let cmd = command::Commands::new(&input);
         debug!("cmd = {:?}", cmd);
-        
-        stream.write(input.as_bytes())
+
+        stream.write_all(serde_json::to_string(&cmd).unwrap().as_bytes())
             .expect("Failed to write to server");
-        
+        stream.write_all(b"\n").expect("Failed to write to server");
+
         let mut reader = BufReader::new(&stream);
 
         reader.read_until(b'\n', &mut buffer)
             .expect("Could not read into buffer");
         
-        println!("{}", str::from_utf8(&buffer).expect("Could not write buffer as string"));
+        let input: command::Commands = serde_json::from_slice(&buffer)?;
+        debug!("Response from server {:?}", input);
+        // let input = str::from_utf8(&buffer).expect("Could not write buffer as string");
+        // if input == "" {
+            // eprintln!("Empty response from server");
+        // }
+        // println!("Response from server {}", input);
     }
 }

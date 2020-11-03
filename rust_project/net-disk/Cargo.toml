@@ -11,9 +11,11 @@ num_cpus = "*"
 mio = "*"
 serde = "*"
 serde_derive = "*"
+serde_json = "*"
 toml = "*"
 log = "*"
 env_logger = "*"
+
 
 
 [config]
