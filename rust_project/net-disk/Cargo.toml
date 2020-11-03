@@ -15,6 +15,7 @@ toml = "*"
 log = "*"
 env_logger = "*"
 
+
 [config]
 ip = "127.0.0.1"
 port = "2000"

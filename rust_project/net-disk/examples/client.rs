@@ -16,7 +16,6 @@ fn main() {
 
     let ip = config.get_ip();
     let port = config.get_port();
-    // let thread_num = config.get_thread_num();
     debug!("ip = {}", ip);
     debug!("port = {}", port);
 
