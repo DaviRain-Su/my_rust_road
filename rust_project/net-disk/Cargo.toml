@@ -15,10 +15,11 @@ serde_json = "*"
 toml = "*"
 log = "*"
 env_logger = "*"
-
+diesel = { version = "*", features = ["sqlite"] }
+dotenv =  "*"
 
 
 [config]
-ip = "127.0.0.1"
+ip = "::1"
 port = "2000"
 thread_num = "8"

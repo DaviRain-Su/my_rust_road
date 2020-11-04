@@ -11,16 +11,6 @@ use serde_json;
 mod threadloop;
 mod cli;
 mod command;
-// #[derive(Debug, Deserialize, Serialize)]
-// pub enum Commands {
-//     CD(Option<Vec<String>>),
-//     LS(Option<Vec<String>>),
-//     PUTS(Option<Vec<String>>),
-//     GETS(Option<Vec<String>>),
-//     REMOVE(Option<Vec<String>>),
-//     PWD(Option<String>),
-//     OTHER(String),
-// }
 
 fn handle_client(stream: TcpStream) -> Result<(), Error>{
     debug!("Incomming connection from : {}", stream.peer_addr().unwrap());

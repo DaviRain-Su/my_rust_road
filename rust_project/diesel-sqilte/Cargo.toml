@@ -1,0 +1,20 @@
+[package]
+name = "diesel-sqilte"
+version = "0.1.0"
+authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-rt = "*"
+actix-web = "3.2.0"
+chrono = {version = "*", features=["serde"]}
+diesel = {version = "*", features = ["sqlite", "uuidv07", "chrono", "r2d2"]}
+dotenv = "*"
+serde = { version = "*", features = ["derive"]}
+serde_json =  "*"
+uuid = {version = "*", features = ["serde", "v4"]}
+diesel_migrations = "*"
+r2d2 = "0.8.9"
+r2d2-diesel = "1.0.0"
