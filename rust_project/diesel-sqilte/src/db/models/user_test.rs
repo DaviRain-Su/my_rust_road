@@ -1,8 +1,9 @@
 use crate::db::{establish_connection, models::User};
+use log::debug;
 
 #[test]
 fn create_user_with_phone_and_email() {
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = Some("test@email.com");
     let phone = Some("123456789");
 
@@ -13,8 +14,7 @@ fn create_user_with_phone_and_email() {
 
 #[test]
 fn create_user_with_phone_only() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = None;
     let phone = Some("1234556");
 
@@ -25,8 +25,7 @@ fn create_user_with_phone_only() {
 
 #[test]
 fn create_user_with_email_only() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = Some("test@email.com");
     let phone = None;
 
@@ -37,8 +36,7 @@ fn create_user_with_email_only() {
 
 #[test]
 fn create_user_with_existing_email() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = Some("test@email.com");
     let phone = None;
 
@@ -50,8 +48,7 @@ fn create_user_with_existing_email() {
 
 #[test]
 fn create_user_with_existing_phone() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = None;
     let phone = Some("1234567");
 
@@ -63,22 +60,21 @@ fn create_user_with_existing_phone() {
 
 #[test]
 fn list_users() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = None;
     let phone = Some("12345678");
 
     let user = User::create(email, phone, &conn).unwrap();
     let existing_user = User::list(&conn);
+    debug!("existing_user = {:?}", existing_user);
 
-    assert_eq!(1, existing_user.len());
+    assert_eq!(4, existing_user.len());
     assert_eq!(user.id, existing_user[0].id);
 }
 
 #[test]
 fn get_user_by_phone() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = None;
     let phone = Some("12345678");
 
@@ -90,8 +86,7 @@ fn get_user_by_phone() {
 
 #[test]
 fn get_user_by_email() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = Some("test@email.com");
     let phone = None;
 
@@ -103,8 +98,7 @@ fn get_user_by_email() {
 
 #[test]
 fn get_user_by_id() {
-    // unimplemented!();
-    let conn = establish_connection();
+    let conn = establish_connection().get().unwrap();
     let email = Some("test@email.com");
     let phone = Some("12345678");
 
