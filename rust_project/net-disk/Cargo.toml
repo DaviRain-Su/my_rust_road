@@ -17,7 +17,8 @@ log = "*"
 env_logger = "*"
 diesel = { version = "*", features = ["sqlite"] }
 dotenv =  "*"
-
+rand = "*"
+rust-crypto = "^0.2"
 
 [config]
 ip = "::1"

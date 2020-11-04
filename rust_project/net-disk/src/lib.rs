@@ -9,7 +9,8 @@ use std::env;
 
 // pub mod schema;
 pub mod models;
-
+pub mod utils;
+pub mod users;
 
 pub fn estable_connection() -> SqliteConnection {
     dotenv().ok();
