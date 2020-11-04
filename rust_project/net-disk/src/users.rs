@@ -8,24 +8,22 @@ use crypto::sha2::Sha256;
 
 use super::utils::generate_string;
 
-const SALT_LEN : usize = 10;
+const SALT_LEN: usize = 10;
 
 /// name 账户的名字
 /// password 账户的密码
 /// salt 随机值用于加密用的, salt长度默认设置的是10
 /// cryptpassword 将密码和salt经过sh256加密之后的输出
 #[derive(Debug, Serialize, Deserialize)]
-struct User {
+pub struct User {
     name: String,
     password: String,
     salt: String,
     cryptpassword: String,
 }
 
-
 impl User {
     pub fn new(name: String, password: String) -> Self {
-        
         // 生成随机值
         let salt = generate_string(SALT_LEN);
 
@@ -34,12 +32,12 @@ impl User {
         //create a sha256  object
         let mut hasher = Sha256::new();
 
-        //write input message 
+        //write input message
         hasher.input_str(&password_salt);
-        
+
         // read hash diggest
         let cryptpassword = hasher.result_str();
-        
+
         Self {
             name,
             password,
@@ -47,8 +45,20 @@ impl User {
             cryptpassword,
         }
     }
-}
 
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+    pub fn get_password(&self) -> &str {
+        &self.password
+    }
+    pub fn get_salt(&self) -> &str {
+        &self.salt
+    }
+    pub fn get_cryptpassword(&self) -> &str {
+        &self.cryptpassword
+    }
+}
 
 #[test]
 fn create_user_test() {

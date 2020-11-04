@@ -3,13 +3,11 @@ use std::net::TcpStream;
 use std::str;
 
 use log;
-use log::{debug, error, log_enabled, info, Level};
-
+use log::{debug, error, info, log_enabled, Level};
 
 mod cli;
-mod threadpool;
 mod command;
-
+mod threadpool;
 
 fn main() -> io::Result<()> {
     env_logger::init();
@@ -29,28 +27,30 @@ fn main() -> io::Result<()> {
     debug!("ip_port = {}", ip_port);
     let mut stream = TcpStream::connect(ip_port).expect("Could not connect to server");
 
-
     loop {
         let mut input = String::new();
 
-        let mut buffer : Vec<u8> = Vec::new();
+        let mut buffer: Vec<u8> = Vec::new();
 
-        io::stdin().read_line(&mut input)
+        io::stdin()
+            .read_line(&mut input)
             .expect("Failed to read from stdin");
 
         let cmd = command::Commands::new(&input);
         debug!("cmd = {:?}", cmd);
 
-        stream.write_all(serde_json::to_string(&cmd).unwrap().as_bytes())
+        stream
+            .write_all(serde_json::to_string(&cmd).unwrap().as_bytes())
             .expect("Failed to write to server");
         stream.write_all(b"\n").expect("Failed to write to server");
 
         let mut reader = BufReader::new(&stream);
 
-        reader.read_until(b'\n', &mut buffer)
+        reader
+            .read_until(b'\n', &mut buffer)
             .expect("Could not read into buffer");
-        
+
         let input: command::Commands = serde_json::from_slice(&buffer)?;
-        debug!("Response from server {:?}", input);   
+        debug!("Response from server {:?}", input);
     }
 }

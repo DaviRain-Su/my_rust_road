@@ -1,26 +1,29 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::net::{TcpListener, TcpStream};
-use std::io::{self, prelude::*, Error, Read, Write, BufReader};
-use log::{ debug, error, log_enabled, info, Level};
-use serde::{ Deserialize, Serialize};
+use log::{debug, error, info, log_enabled, Level};
+use serde::{Deserialize, Serialize};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json;
+use std::io::{self, prelude::*, BufReader, Error, Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
-mod threadloop;
 mod cli;
 mod command;
+mod threadloop;
 
-fn handle_client(stream: TcpStream) -> Result<(), Error>{
-    debug!("Incomming connection from : {}", stream.peer_addr().unwrap());
+fn handle_client(stream: TcpStream) -> Result<(), Error> {
+    debug!(
+        "Incomming connection from : {}",
+        stream.peer_addr().unwrap()
+    );
 
-    let mut buf  = Vec::new();
+    let mut buf = Vec::new();
     let mut stream = BufReader::new(stream);
     loop {
         buf.clear();
 
-        let bytes_read = stream.read_until(b'\n',&mut buf)?;
+        let bytes_read = stream.read_until(b'\n', &mut buf)?;
         if bytes_read == 0 {
             return Ok(());
         }
@@ -28,13 +31,17 @@ fn handle_client(stream: TcpStream) -> Result<(), Error>{
         debug!("input = {:?}", input);
 
         // stream.get_mut().write(&buf[..bytes_read])?;
-        stream.get_mut().write_all(serde_json::to_string(&input).unwrap().as_bytes())
+        stream
+            .get_mut()
+            .write_all(serde_json::to_string(&input).unwrap().as_bytes())
             .expect("Failed to write to server");
-        stream.get_mut().write_all(b"\n").expect("Failed to write to server");
+        stream
+            .get_mut()
+            .write_all(b"\n")
+            .expect("Failed to write to server");
         stream.get_mut().flush()?;
     }
 }
-
 
 fn main() -> std::io::Result<()> {
     env_logger::init();
@@ -57,8 +64,8 @@ fn main() -> std::io::Result<()> {
     // listener.set_nonblocking(true).expect("Cannot set non-blocking");
 
     let pool = threadloop::ThreadPool::new(thread_num);
-    
-    // accept connections and process them serially 
+
+    // accept connections and process them serially
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
