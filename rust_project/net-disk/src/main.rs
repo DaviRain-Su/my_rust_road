@@ -9,11 +9,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 mod cli;
-mod threadloop; 
 mod protocol;
+mod threadpool;
 mod users;
 mod utils;
-
 
 fn handle_client(stream: TcpStream) -> Result<(), Error> {
     debug!(
@@ -32,15 +31,14 @@ fn handle_client(stream: TcpStream) -> Result<(), Error> {
         if bytes_read == 0 {
             return Ok(());
         }
-        
+
         // 根据接受的是login / register / cancel 去选择执行
-        let lrc_command : protocol::login_register_cancle::LRC = serde_json::from_slice(&buf)?;
-        
-        
+        let lrc_command: protocol::logic::LRC = serde_json::from_slice(&buf)?;
+
         // 大部分的处理任务都放在了登录之后的操作，
-        // 例如，登录成功之后需要查看网盘的内容，ls, 
-        // 目录的切换操作 cd 
-        // 将本地文件发送到服务器 puts 
+        // 例如，登录成功之后需要查看网盘的内容，ls,
+        // 目录的切换操作 cd
+        // 将本地文件发送到服务器 puts
         // 下载服务器上的文件 gets
         // 删除服务器上的文件 rm, 删除的只是每个用户的虚拟文件系统中的文件名，当真实的文件引用数变为0，删除真实的文件
         // 其他命令不响应
@@ -82,7 +80,7 @@ fn main() -> std::io::Result<()> {
     let listener = TcpListener::bind(ip_port)?;
     // listener.set_nonblocking(true).expect("Cannot set non-blocking");
 
-    let pool = threadloop::ThreadPool::new(thread_num);
+    let pool = threadpool::ThreadPool::new(thread_num);
 
     // accept connections and process them serially
     for stream in listener.incoming() {

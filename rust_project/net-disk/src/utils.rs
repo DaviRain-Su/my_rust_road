@@ -32,5 +32,4 @@ fn test_generat_string() {
 
     let result = generate_string(length);
     println!("result = {}", result);
-    // assert_eq!(result, String::new());
 }

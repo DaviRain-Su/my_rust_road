@@ -51,7 +51,6 @@ impl Commands {
     }
 }
 
-
 #[derive(Debug)]
 pub enum ReturnCode {
     NORMAL(String),
