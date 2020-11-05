@@ -26,10 +26,6 @@ fn test_show_user_info() {
     use schema::user_info::dsl::*;
 
     let conn = estable_connection();
-    let user = users::User::new("davirain".to_string(), "12344567".to_string());
-    println!("user = {:?}", user);
-
-    let _ = UserInfo::create(user.get_name(), user.get_password(), user.get_salt(), user.get_cryptpassword(),&conn);
 
     let results = user_info
         .load::<UserInfo>(&conn)
@@ -38,10 +34,39 @@ fn test_show_user_info() {
     println!("Displaying {} posts", results.len());
     for user in results {
         println!("----------------------------------------------");
+        println!("id = {}", user.id);
         println!("username = {}", user.username);
         println!("password = {}", user.password);
         println!("salt = {}", user.salt);
         println!("cryptopassword = {}", user.cryptpassword);
         println!("----------------------------------------------");
     }
+}
+
+
+#[test]
+fn test_create_user() {
+    use models::UserInfo;
+
+    let conn = estable_connection();
+    let user = users::User::new("davirain".to_string(), "12344567".to_string());
+    println!("user = {:?}", user);
+
+    let user_temp = UserInfo::create(user.get_name(), user.get_password(), user.get_salt(), user.get_cryptpassword(),&conn);
+
+    assert_eq!(user_temp.username, user.get_name());
+    assert_eq!(user_temp.password, user.get_password());
+}
+
+#[test]
+fn test_delete_by_name() {
+    use models::UserInfo;
+
+    let conn = estable_connection();
+
+    let username = "davirain";
+
+    let result_num = UserInfo::delete_by_name(username, &conn);
+
+    println!("result num = {}", result_num);
 }

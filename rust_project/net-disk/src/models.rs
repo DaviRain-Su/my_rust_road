@@ -42,6 +42,14 @@ impl UserInfo {
             .ok()
     }
 
+    pub fn delete_by_name(username_str: &str, conn: &SqliteConnection) -> usize {
+        use super::schema::user_info::dsl::username;
+
+        diesel::delete(user_info_dsl.filter(username.eq(username_str)))
+            .execute(conn)
+            .expect("Error deleting users")
+    }
+
     pub fn create(
         username: &str,
         password: &str,
@@ -52,11 +60,15 @@ impl UserInfo {
 
         let new_user = Self::new_user_struct(username, password, salt, cryptpassword);
 
-        diesel::insert_into(user_info_dsl)
+        // 不存在，再插入
+        if Self::by_username(username, &conn).is_none() {
+            diesel::insert_into(user_info_dsl)
             .values(&new_user)
             .execute(conn)
             .expect("Error saving new user");
+        }
 
+        // 返回数据库中的UserInfo
         Self::by_username(username, &conn).unwrap()
     }
 
