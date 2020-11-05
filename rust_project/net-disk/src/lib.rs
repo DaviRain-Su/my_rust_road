@@ -43,7 +43,6 @@ fn test_show_user_info() {
     }
 }
 
-
 #[test]
 fn test_create_user() {
     use models::UserInfo;
@@ -52,7 +51,13 @@ fn test_create_user() {
     let user = users::User::new("davirain".to_string(), "12344567".to_string());
     println!("user = {:?}", user);
 
-    let user_temp = UserInfo::create(user.get_name(), user.get_password(), user.get_salt(), user.get_cryptpassword(),&conn);
+    let user_temp = UserInfo::create(
+        user.get_name(),
+        user.get_password(),
+        user.get_salt(),
+        user.get_cryptpassword(),
+        &conn,
+    );
 
     assert_eq!(user_temp.username, user.get_name());
     assert_eq!(user_temp.password, user.get_password());
