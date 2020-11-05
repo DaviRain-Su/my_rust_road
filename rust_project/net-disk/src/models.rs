@@ -6,6 +6,124 @@ use super::schema::user_info::dsl::user_info as user_info_dsl;
 use super::schema::user_request;
 use super::schema::user_request::dsl::user_request as user_request_dsl;
 
+use super::schema::user_path;
+use super::schema::user_path::dsl::user_path as user_path_dsl;
+
+#[derive(Queryable, Debug)]
+pub struct UserPath {
+    pub id: i32,
+    pub prenum: i32,
+    pub fname: String,
+    pub ftype: String,
+    pub pfname: String,
+    pub md5: String,
+    pub fsize: i32,
+    pub vfname: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "user_path"]
+pub struct NewUserPath {
+    pub prenum: i32,
+    pub fname: String,
+    pub pfname: String,
+    pub md5: String,
+    pub fsize: i32,
+    pub vfname: String,
+}
+
+impl UserPath {
+    pub fn list(conn: &SqliteConnection) -> Vec<Self> {
+        user_path_dsl
+            .load::<UserPath>(conn)
+            .expect("Error load userpath")
+    }
+    pub fn by_id(id: i32, conn: &SqliteConnection) -> Option<Self> {
+        user_path_dsl.find(id).get_result::<UserPath>(conn).ok()
+    }
+    pub fn by_prenum(prenum_val: i32, conn: &SqliteConnection) -> Vec<Self> {
+        use super::schema::user_path::dsl::prenum;
+
+        user_path_dsl
+            .filter(prenum.eq(prenum_val))
+            .load::<UserPath>(conn)
+            .expect(format!("Error                                                                                                                                                                                  failed to find prenum = {}", prenum_val))
+    }
+
+    pub fn by_fname(fname_str: &str, conn: &SqliteConnection) -> Option<Self> {
+        use super::schema::user_path::dsl::fname;
+
+        user_path_dsl
+            .filter(fname.eq(fname_str))
+            .get_result::<UserPath>(conn)
+            .ok()
+    }
+
+    pub fn by_md5(md5_str: &str, conn: &SqliteConnection) -> Option<Self> {
+        use super::schema::user_path::dsl::md5;
+
+        user_path_dsl
+            .filter(md5.eq(md5_str))
+            .get_result::<UserPath>(conn)
+            .ok()
+    }
+
+    pub fn by_vfname(vfname_str: &str, conn: &SqliteConnection) -> Option<Self> {
+        use super::schema::user_path::dsl::vfname;
+
+        user_path_dsl
+            .filter(vfname.eq(vfname_str))
+            .get_result::<UserPath>(conn)
+            .ok()
+    }
+
+    pub fn create(
+        prenum: i32,
+        fname: &str,
+        pfname: &str,
+        md5: &str,
+        fsize: i32,
+        vfname: &str,
+        conn: &SqliteConnection,
+    ) -> Self {
+        if UserPath::by_md5(md5, conn).is_none() {
+            let new_user_path = Self::new_user_struct(prenum, fname, pfname, md5, fsize, vfname);
+            diesel::insert_into(user_path_dsl)
+                .values(&new_user_path)
+                .execute(conn)
+                .expect("Error saving new user");
+        }
+
+        UserPath::by_md5(md5, conn).unwrap()
+    }
+
+    pub fn delete_by_md5(md5_str: &str, conn: &SqliteConnection) -> usize {
+        use super::schema::user_path::dsl::md5;
+
+        diesel::delete(user_path_dsl.filter(md5.eq(md5_str)))
+            .execute(conn)
+            .expect("Error deleting users")
+    }
+
+    fn new_user_struct(
+        prenum: i32,
+        fname: &str,
+        pfname: &str,
+        md5: &str,
+        fsize: i32,
+        vfname: &str,
+    ) -> NewUserPath {
+        NewUserPath {
+            prenum,
+            fname: fname.into(),
+            pfname: pfname.into(),
+            md5: md5.into(),
+            fsize,
+            vfname: fname.into(),
+        }
+    }
+}
+
 #[derive(Queryable, Debug)]
 pub struct UserRequest {
     pub id: i32,
@@ -151,8 +269,11 @@ impl UserInfo {
         Self::by_username(username_str, conn).unwrap().salt.clone()
     }
 
-    pub fn get_cryptpassword(username_str: &str, conn: &SqliteConnection) -> String {
-        Self::by_username(username_str, conn).unwrap().cryptpassword.clone()
+    pub fn get_cryptpassword_by_name(username_str: &str, conn: &SqliteConnection) -> String {
+        Self::by_username(username_str, conn)
+            .unwrap()
+            .cryptpassword
+            .clone()
     }
 
     // 删除用户信息通过username

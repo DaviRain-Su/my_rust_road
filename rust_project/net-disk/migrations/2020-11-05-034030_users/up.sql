@@ -15,7 +15,7 @@ CREATE TABLE user_request (
     token VARCHAR NOT NULL
 );
 
-CREATE TABLE use_path (
+CREATE TABLE user_path (
     id INTEGER NOT NULL PRIMARY KEY,
     prenum INTEGER NOT NULL,
     fname VARCHAR NOT NULL,

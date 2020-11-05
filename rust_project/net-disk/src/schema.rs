@@ -1,5 +1,15 @@
 table! {
-    use_path (id) {
+    user_info (id) {
+        id -> Integer,
+        username -> Text,
+        password -> Text,
+        salt -> Text,
+        cryptpassword -> Text,
+    }
+}
+
+table! {
+    user_path (id) {
         id -> Integer,
         prenum -> Integer,
         fname -> Text,
@@ -8,16 +18,6 @@ table! {
         md5 -> Text,
         fsize -> Integer,
         vfname -> Text,
-    }
-}
-
-table! {
-    user_info (id) {
-        id -> Integer,
-        username -> Text,
-        password -> Text,
-        salt -> Text,
-        cryptpassword -> Text,
     }
 }
 
@@ -31,8 +31,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    use_path,
-    user_info,
-    user_request,
-);
+allow_tables_to_appear_in_same_query!(user_info, user_path, user_request,);
