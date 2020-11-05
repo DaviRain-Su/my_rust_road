@@ -10,9 +10,9 @@ pub enum Commands {
     LS(Option<Vec<String>>),
     PUTS(Option<Vec<String>>),
     GETS(Option<Vec<String>>),
-    REMOVE(Option<Vec<String>>),
+    RM(Option<Vec<String>>),
     PWD(Option<String>),
-    OTHER(String),
+    OTHERS(String),
 }
 
 impl Commands {
@@ -42,11 +42,18 @@ impl Commands {
         } else if command == "gets" && commands_len == 2 {
             Commands::GETS(Some(commands))
         } else if command == "remove" && commands_len == 2 {
-            Commands::REMOVE(Some(commands))
+            Commands::RM(Some(commands))
         } else if command == "pwd" && commands_len == 1 {
             Commands::PWD(Some(commands[0].to_string()))
         } else {
-            Commands::OTHER(format!("No this command : {:?}", commands))
+            Commands::OTHERS(format!("No this command : {:?}", commands))
         }
     }
+}
+
+
+#[derive(Debug)]
+pub enum ReturnCode {
+    NORMAL(String),
+    ERROR(String),
 }

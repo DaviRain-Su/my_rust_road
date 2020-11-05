@@ -6,11 +6,8 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-// pub mod schema;
 pub mod models;
 pub mod schema;
-pub mod users;
-pub mod utils;
 
 pub fn estable_connection() -> SqliteConnection {
     dotenv().ok();
