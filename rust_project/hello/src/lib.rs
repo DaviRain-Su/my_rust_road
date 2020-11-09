@@ -2,7 +2,6 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: mpsc::Sender<Message>,
@@ -16,7 +15,6 @@ enum Message {
     NewJob(Job),
     Terminate,
 }
-
 
 impl ThreadPool {
     /// 创建线程池
@@ -52,10 +50,8 @@ impl ThreadPool {
     }
 }
 
-
 impl Drop for ThreadPool {
     fn drop(&mut self) {
-
         println!("Sending terminate message to all workers.");
 
         for _ in &mut self.workers {
@@ -89,18 +85,19 @@ impl Worker {
                         println!("Worker {} got a job; executing.", id);
 
                         job();
-                    },
+                    }
                     Message::Terminate => {
                         println!("Worker {} was told to terminate.", id);
 
                         break;
-                    },
+                    }
                 }
             }
         });
 
-        Self { id,
-            thread : Some(thread)
+        Self {
+            id,
+            thread: Some(thread),
         }
     }
 }
