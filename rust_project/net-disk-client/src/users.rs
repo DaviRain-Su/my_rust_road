@@ -10,22 +10,25 @@ use super::utils::generate_string;
 const SALT_LEN: usize = 10;
 
 /// name 账户的名字
+/// 
 /// password 账户的密码
+/// 
 /// salt 随机值用于加密用的, salt长度默认设置的是10
+/// 
 /// cryptpassword 将密码和salt经过sh256加密之后的输出
+/// 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct User {
-    name: String,
+pub struct RegistryUser {
+    username: String,
     password: String,
     salt: String,
     cryptpassword: String,
 }
 
-impl User {
-    pub fn new(name: String, password: String) -> Self {
-        let name = name.trim();
+impl RegistryUser {
+    pub fn new(username: &str, password: &str) -> Self {
+        let username = username.trim();
         let password = password.trim();
-
         // 生成随机值
         let salt = generate_string(SALT_LEN);
 
@@ -41,15 +44,15 @@ impl User {
         let cryptpassword = hasher.result_str();
 
         Self {
-            name: name.into(),
-            password: password.into(),
+            username : username.into(),
+            password : password.into(),
             salt,
             cryptpassword,
         }
     }
 
     pub fn get_name(&self) -> &str {
-        &self.name
+        &self.username
     }
     pub fn get_password(&self) -> &str {
         &self.password
@@ -67,7 +70,32 @@ fn create_user_test() {
     let name = "dairain".to_string();
     let password = "123456".to_string();
 
-    let user = User::new(name, password);
+    let user = RegistryUser::new(&name, &password);
 
     println!("user = {:?}", user);
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoginUser {
+    username: String,
+    password: String,
+}
+
+impl LoginUser {
+    pub fn new(username: &str, password: &str) -> Self {
+        // 删除用户名和密码前后的换行符和空格
+        let username = username.trim();
+        let password = password.trim();
+        Self {
+            username: username.into(),
+            password: password.into(),
+        }
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.username
+    }
+    pub fn get_password(&self) -> &str {
+        &self.password
+    }
 }

@@ -5,46 +5,48 @@ use std::str;
 use log::{debug, error, info, log_enabled, Level};
 
 mod cli;
-mod threadpool;
-mod logic;
 mod command;
+mod logic;
+mod threadpool;
 mod users;
 mod utils;
 
-use logic::{send_message, recv_message, get_intput, login};
-
+use logic::{get_intput, login, recv_message, send_message};
 
 fn main() -> io::Result<()> {
     env_logger::init();
-    let config = cli::Config::new("./Cargo.toml");
 
+    // 从Cargo.tml 读取配置信息
+    let config = cli::Config::new("./Cargo.toml");
     debug!("config = {:?}", config);
 
+    // 获取配合的ip, port, thread_num
     let ip = config.get_ip();
     let port = config.get_port();
     let thread_num = config.get_thread_num();
-
     debug!("ip = {}", ip);
     debug!("port = {}", port);
     debug!("thread_num = {}", thread_num);
 
     let ip_port = config.get_ip_port();
     debug!("ip_port = {}", ip_port);
-    let mut stream = TcpStream::connect(ip_port).expect("Could not connect to server");
+
+    // tcp 连接建立
+    let stream = TcpStream::connect(ip_port).expect("Could not connect to server");
 
     loop {
+
         utils::main_info();
 
         let mut input = String::new();
         get_intput(&mut input);
+        
         let lrc = logic::LRC::new(&input);
-        
-        
         let mut stream = BufReader::new(&stream);
-        let ctr = logic::LRC::REGISTRY;
-        send_message(&mut stream, &ctr);
 
-        let ret = login(&mut stream);
+        // 发送是注册 还是登陆 还是退出信息
+        send_message(&mut stream, &lrc)?;
+        let ret = lrc.deal(&mut stream);
         debug!("ret = {:?}", ret);
     }
 }

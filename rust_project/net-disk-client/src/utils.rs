@@ -34,7 +34,6 @@ fn test_generat_string() {
     println!("result = {}", result);
 }
 
-
 pub fn main_info() {
     println!("***************************************************");
     println!("***************************************************");

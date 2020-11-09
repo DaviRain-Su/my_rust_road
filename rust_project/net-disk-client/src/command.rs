@@ -33,17 +33,9 @@ impl Commands {
             .map(|val| val.to_string())
             .collect::<Vec<String>>();
 
-        if command == "cd"
-            && (
-                commands_len == 1 || commands_len == 2
-            )
-        {
+        if command == "cd" && (commands_len == 1 || commands_len == 2) {
             Commands::CD(Some(commands))
-        } else if command == "ls"
-            && (
-                commands_len == 1 || commands_len == 2
-            )
-        {
+        } else if command == "ls" && (commands_len == 1 || commands_len == 2) {
             Commands::LS(Some(commands))
         } else if command == "puts" && commands_len == 2 {
             Commands::PUTS(Some(commands))
@@ -58,8 +50,6 @@ impl Commands {
         }
     }
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CommandsReturnCode {
@@ -83,8 +73,8 @@ impl InitReturnCode {
         match *self {
             InitReturnCode::NORMAL => {
                 println!("用户创建成功");
-            },
-            InitReturnCode::ERROR => { 
+            }
+            InitReturnCode::ERROR => {
                 println!("用户创建失败");
             }
         }
