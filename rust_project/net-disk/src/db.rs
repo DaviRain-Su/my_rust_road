@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
-
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
 pub mod models;
 pub mod schema;
+
+use crate::users::{RegistryUser, LoginUser};
 
 pub fn estable_connection() -> SqliteConnection {
     dotenv().ok();
@@ -45,7 +43,7 @@ fn test_create_user() {
     use models::UserInfo;
 
     let conn = estable_connection();
-    let user = users::User::new("davirain".to_string(), "12344567".to_string());
+    let user = User::new("davirain".to_string(), "12344567".to_string());
     println!("user = {:?}", user);
 
     let user_temp = UserInfo::create(

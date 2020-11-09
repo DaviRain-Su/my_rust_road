@@ -14,15 +14,18 @@ const SALT_LEN: usize = 10;
 /// salt 随机值用于加密用的, salt长度默认设置的是10
 /// cryptpassword 将密码和salt经过sh256加密之后的输出
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RegistryUser {
+pub struct User {
     name: String,
     password: String,
     salt: String,
     cryptpassword: String,
 }
 
-impl RegistryUser {
+impl User {
     pub fn new(name: String, password: String) -> Self {
+        let name = name.trim();
+        let password = password.trim();
+
         // 生成随机值
         let salt = generate_string(SALT_LEN);
 
@@ -38,8 +41,8 @@ impl RegistryUser {
         let cryptpassword = hasher.result_str();
 
         Self {
-            name,
-            password,
+            name: name.into(),
+            password: password.into(),
             salt,
             cryptpassword,
         }
@@ -67,30 +70,4 @@ fn create_user_test() {
     let user = User::new(name, password);
 
     println!("user = {:?}", user);
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LoginUser {
-    username: String,
-    password: String,
-}
-
-impl LoginUser {
-    pub fn new(username: &str, password: &str) -> Self {
-        // 删除用户名和密码前后的换行符和空格
-        let username = username.trim();
-        let password = password.trim();
-        Self {
-            username: username.into(),
-            password: password.into(),
-        }
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.username
-    }
-    pub fn get_password(&self) -> &str {
-        &self.password
-    }
-
 }

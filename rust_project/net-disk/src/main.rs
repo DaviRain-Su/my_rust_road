@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
 use log::{debug, error, info, log_enabled, Level};
 use serde::{Deserialize, Serialize};
 use serde_derive::Deserialize;
@@ -9,16 +13,17 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 mod cli;
-mod protocol;
+mod command;
+mod db;
+mod logic;
 mod threadpool;
 mod users;
 mod utils;
 
+use logic::{recv_message, send_message};
+
 fn handle_client(stream: TcpStream) -> Result<(), Error> {
-    debug!(
-        "Incomming connection from : {}",
-        stream.peer_addr().unwrap()
-    );
+    debug!("Incoming connection from : {}", stream.peer_addr().unwrap());
 
     let mut buf = Vec::new();
     let mut stream = BufReader::new(stream);
@@ -26,14 +31,18 @@ fn handle_client(stream: TcpStream) -> Result<(), Error> {
     loop {
         buf.clear();
 
+        // let bytes_read = stream.read_until(b'\n', &mut buf)?;
+        // if bytes_read == 0 {
+        //     return Ok(());
+        // }
+
         // 先读取注册信息
-        let bytes_read = stream.read_until(b'\n', &mut buf)?;
-        if bytes_read == 0 {
-            return Ok(());
-        }
+        recv_message(&mut stream, &mut buf);
+        debug!("buf = {:?}", buf);
 
         // 根据接受的是login / register / cancel 去选择执行
-        let lrc_command: protocol::logic::LRC = serde_json::from_slice(&buf)?;
+        let lrc_command: logic::LRC = serde_json::from_slice(&buf)?;
+        debug!("lrc_command = {:?}", lrc_command);
 
         // 大部分的处理任务都放在了登录之后的操作，
         // 例如，登录成功之后需要查看网盘的内容，ls,

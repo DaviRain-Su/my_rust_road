@@ -47,7 +47,7 @@ impl UserPath {
         user_path_dsl
             .filter(prenum.eq(prenum_val))
             .load::<UserPath>(conn)
-            .expect(format!("Error                                                                                                                                                                                  failed to find prenum = {}", prenum_val))
+            .expect(&format!("Error failed to find prenum = {}", prenum_val))
     }
 
     pub fn by_fname(fname_str: &str, conn: &SqliteConnection) -> Option<Self> {

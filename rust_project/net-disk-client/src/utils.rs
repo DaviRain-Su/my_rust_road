@@ -1,7 +1,7 @@
 use rand;
 use rand::Rng;
 
-/// 生成随机长度的字符串，长度为传入的参数
+/// 生成随机数长度为参数的长度length
 pub fn generate_string(length: usize) -> String {
     let mut rng = rand::thread_rng();
     let mut rand_string = String::new();
@@ -32,4 +32,17 @@ fn test_generat_string() {
 
     let result = generate_string(length);
     println!("result = {}", result);
+}
+
+
+pub fn main_info() {
+    println!("***************************************************");
+    println!("***************************************************");
+    println!("***************  Net Disk  ************************");
+    println!("***************************************************");
+    println!("************** Input: login ********************");
+    println!("************** Input: registry *****************");
+    println!("************** Input: quit *********************");
+    println!("***************************************************");
+    println!("***************************************************");
 }

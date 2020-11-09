@@ -28,6 +28,7 @@ impl Config {
             .read_to_string(&mut contents)
             .expect("Could read file to String!!");
 
+        // println!("contents = {}", contents);
         let cfg: CliConfig = toml::from_str(&contents).expect("Could parse config toml");
 
         Self {

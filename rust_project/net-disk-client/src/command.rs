@@ -10,9 +10,9 @@ pub enum Commands {
     LS(Option<Vec<String>>),
     PUTS(Option<Vec<String>>),
     GETS(Option<Vec<String>>),
-    RM(Option<Vec<String>>),
+    REMOVE(Option<Vec<String>>),
     PWD(Option<String>),
-    OTHERS(String),
+    OTHER(String),
 }
 
 impl Commands {
@@ -33,26 +33,60 @@ impl Commands {
             .map(|val| val.to_string())
             .collect::<Vec<String>>();
 
-        if command == "cd" && (commands_len == 1 || commands_len == 2) {
+        if command == "cd"
+            && (
+                commands_len == 1 || commands_len == 2
+            )
+        {
             Commands::CD(Some(commands))
-        } else if command == "ls" && (commands_len == 2 || commands_len == 1) {
+        } else if command == "ls"
+            && (
+                commands_len == 1 || commands_len == 2
+            )
+        {
             Commands::LS(Some(commands))
         } else if command == "puts" && commands_len == 2 {
             Commands::PUTS(Some(commands))
         } else if command == "gets" && commands_len == 2 {
             Commands::GETS(Some(commands))
         } else if command == "remove" && commands_len == 2 {
-            Commands::RM(Some(commands))
+            Commands::REMOVE(Some(commands))
         } else if command == "pwd" && commands_len == 1 {
             Commands::PWD(Some(commands[0].to_string()))
         } else {
-            Commands::OTHERS(format!("No this command : {:?}", commands))
+            Commands::OTHER(format!("No this command : {:?}", commands))
         }
     }
 }
 
-#[derive(Debug)]
-pub enum ReturnCode {
-    NORMAL(String),
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CommandsReturnCode {
+    CDNORMAL(String),
+    LSNORMAL(String),
+    PUTSNORMAL(String),
+    GETSNORMAL(String),
+    RMNORMAL(String),
+    PWDNORMAL(String),
     ERROR(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum InitReturnCode {
+    NORMAL,
+    ERROR,
+}
+
+impl InitReturnCode {
+    pub fn parse(&self) {
+        match *self {
+            InitReturnCode::NORMAL => {
+                println!("用户创建成功");
+            },
+            InitReturnCode::ERROR => { 
+                println!("用户创建失败");
+            }
+        }
+    }
 }

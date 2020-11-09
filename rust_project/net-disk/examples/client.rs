@@ -7,7 +7,9 @@ use log::{debug, error, info, log_enabled, Level};
 
 mod cli;
 mod command;
+mod logic;
 mod threadpool;
+mod users;
 
 fn main() -> io::Result<()> {
     env_logger::init();
@@ -28,29 +30,31 @@ fn main() -> io::Result<()> {
     let mut stream = TcpStream::connect(ip_port).expect("Could not connect to server");
 
     loop {
-        let mut input = String::new();
+        // let mut input = String::new();
+        // let mut username = String::new();
+        // let mut password = String::new();
 
-        let mut buffer: Vec<u8> = Vec::new();
+        // let mut buffer: Vec<u8> = Vec::new();
 
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read from stdin");
+        // io::stdin()
+        //     .read_line(&mut username)
+        //     .expect("Failed to read from stdin");
 
-        let cmd = command::Commands::new(&input);
-        debug!("cmd = {:?}", cmd);
+        // let cmd = command::Commands::new(&input);
+        // debug!("cmd = {:?}", cmd);
 
-        stream
-            .write_all(serde_json::to_string(&cmd).unwrap().as_bytes())
-            .expect("Failed to write to server");
-        stream.write_all(b"\n").expect("Failed to write to server");
+        // stream
+        //     .write_all(serde_json::to_string(&cmd).unwrap().as_bytes())
+        //     .expect("Failed to write to server");
+        // stream.write_all(b"\n").expect("Failed to write to server");
 
-        let mut reader = BufReader::new(&stream);
+        // let mut reader = BufReader::new(&stream);
 
-        reader
-            .read_until(b'\n', &mut buffer)
-            .expect("Could not read into buffer");
+        // reader
+        //     .read_until(b'\n', &mut buffer)
+        //     .expect("Could not read into buffer");
 
-        let input: command::Commands = serde_json::from_slice(&buffer)?;
-        debug!("Response from server {:?}", input);
+        // let input: command::Commands = serde_json::from_slice(&buffer)?;
+        // debug!("Response from server {:?}", input);
     }
 }
