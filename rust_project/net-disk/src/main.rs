@@ -31,11 +31,6 @@ fn handle_client(stream: TcpStream) -> Result<(), Error> {
     loop {
         buf.clear();
 
-        // let bytes_read = stream.read_until(b'\n', &mut buf)?;
-        // if bytes_read == 0 {
-        //     return Ok(());
-        // }
-
         // 先读取注册信息
         recv_message(&mut stream, &mut buf);
         debug!("buf = {:?}", buf);
@@ -44,6 +39,8 @@ fn handle_client(stream: TcpStream) -> Result<(), Error> {
         let lrc_command: logic::LRC = serde_json::from_slice(&buf)?;
         debug!("lrc_command = {:?}", lrc_command);
 
+        //
+        //
         // 大部分的处理任务都放在了登录之后的操作，
         // 例如，登录成功之后需要查看网盘的内容，ls,
         // 目录的切换操作 cd
@@ -52,20 +49,9 @@ fn handle_client(stream: TcpStream) -> Result<(), Error> {
         // 删除服务器上的文件 rm, 删除的只是每个用户的虚拟文件系统中的文件名，当真实的文件引用数变为0，删除真实的文件
         // 其他命令不响应
         // 登录注册取消的处理逻辑
-        lrc_command.deal_lrc(&mut stream);
-
-        // let input: command::Commands = serde_json::from_slice(&buf)?;
-        // debug!("input = {:?}", input);
-
-        // stream
-        //     .get_mut()
-        //     .write_all(serde_json::to_string(&input).unwrap().as_bytes())
-        //     .expect("Failed to write to server");
-        // stream
-        //     .get_mut()
-        //     .write_all(b"\n")
-        //     .expect("Failed to write to server");
-        // stream.get_mut().flush()?;
+        //
+        //
+        lrc_command.deal_lrc(&mut stream)?;
     }
 }
 
@@ -87,7 +73,6 @@ fn main() -> std::io::Result<()> {
     debug!("ip_port = {}", ip_port);
 
     let listener = TcpListener::bind(ip_port)?;
-    // listener.set_nonblocking(true).expect("Cannot set non-blocking");
 
     let pool = threadpool::ThreadPool::new(thread_num);
 
@@ -95,7 +80,7 @@ fn main() -> std::io::Result<()> {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                // Use threadpool
+                // use threadpool
                 pool.execute(move || {
                     handle_client(stream).unwrap_or_else(|error| eprintln!("{:?}", error));
                 });

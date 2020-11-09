@@ -40,15 +40,13 @@ impl LRC {
                 self.quit(stream)?;
                 Ok(())
             }
-            LRC::OTHER => {
-                unimplemented!()
-            }
+            LRC::OTHER => unimplemented!(),
         }
     }
 
     pub fn deal_cmd(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let mut buf = Vec::new();
-        recv_message(stream,&mut buf);
+        recv_message(stream, &mut buf)?;
         debug!("deal cmd, buf = {:?}", buf);
 
         let cmd: Commands = serde_json::from_slice(&buf)?;
@@ -93,28 +91,36 @@ impl LRC {
     pub fn login(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let mut buf = Vec::new();
         debug!("In login buf = {:?}", buf);
+
         // 接受消息
-        recv_message(stream, &mut buf);
+        recv_message(stream, &mut buf)?;
         debug!("In login bug = {:?}", buf);
 
         // 接受传输过来的User信息，和数据库中的用户信息进行对比
-        let res_user: LoginUser = serde_json::from_slice(&buf)?;
+        let res_user: LoginUser = serde_json::from_slice(&buf[..])?;
         debug!("In login res_user = {:?}", res_user);
 
         // 连接建立
+        // TODO 如果用户传入过来一个没有注册的用户需要错误处理
         let conn = estable_connection();
         let ret_result = UserInfo::by_username(res_user.get_name(), &conn).unwrap();
+
         // 得到salt
         let salt = ret_result.salt;
         debug!("In login salt = {:?}", salt);
+        debug!("In login crypto password = {:?}", ret_result.cryptpassword);
+
         // 发送salt
-        send_message(stream, &salt);
+        send_message(stream, &salt)?;
 
         // 接收加密后的密码
         buf.clear();
         debug!("In login buf = {:?}", buf);
-        recv_message(stream, &mut buf);
-        let crypto_salt_password = std::str::from_utf8(&buf).unwrap();
+
+        recv_message(stream, &mut buf)?;
+
+        // 需要使用serde_json 来解析发送的字符串
+        let crypto_salt_password : String = serde_json::from_slice(&buf)?;
         debug!("In login crypto password = {:?}", crypto_salt_password);
 
         // 进行密码验证
@@ -122,16 +128,17 @@ impl LRC {
             // 发送成功消息
             let normal = InitReturnCode::NORMAL;
             debug!("In login normal = {:?}", normal);
-            send_message(stream, &normal);
+            send_message(stream, &normal)?;
             debug!("In login, will in deal_cmd");
             // 进入业务逻辑处理
             self.deal_cmd(stream)?;
         } else {
             let error = InitReturnCode::ERROR;
             debug!("In login error = {:?}", error);
-            send_message(stream, &error);
+            send_message(stream, &error)?;
             // 发送失败消息
         }
+
         // 根据用户名将获得salt, 将salt 发送给客户端
         // 再接受客户端密码和salt加密后的字符串
         // 将得到的加密后的字符串和数据中的加密后的字符串进行对比
@@ -141,17 +148,16 @@ impl LRC {
         Ok(())
     }
 
-    pub fn registry(&self, stream: &mut BufReader<TcpStream>) ->Result<(), Error> {
-
+    pub fn registry(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let mut buf = Vec::new();
         debug!("In Registry, buf = {:?}", buf);
         debug!("Start at registry!");
 
-        recv_message(stream, &mut buf);
+        recv_message(stream, &mut buf)?;
         debug!("In Registry, buf = {:?}", buf);
 
         let res_user: RegistryUser = serde_json::from_slice(&buf)?;
-        debug!("In Registry res_user =  {:?}", res_user);
+        debug!("In Registry res_user = {:?}", res_user);
 
         // 数据库连接建立
         let conn = estable_connection();
@@ -167,13 +173,14 @@ impl LRC {
                 res_user.get_cryptpassword(),
                 &conn,
             );
+
             // 得到插入用户后信息
             debug!("In Registry result = {:?}", result);
 
             // 返回发送成功的返回值
             let ret_code = InitReturnCode::NORMAL;
             debug!("ret_code = {:?}", ret_code);
-            send_message(stream, &ret_code);
+            send_message(stream, &ret_code)?;
         } else {
             let result = UserInfo::by_username(res_user.get_name(), &conn).unwrap();
             debug!("In Registry result = {:?}", result);
@@ -181,18 +188,16 @@ impl LRC {
             // 返回创建失败的消息，因为用户已经存在了
             let ret_code = InitReturnCode::ERROR;
             debug!("ret_code = {:?}", ret_code);
-            send_message(stream, &ret_code);
+            send_message(stream, &ret_code)?;
         }
         Ok(())
     }
 
     pub fn quit(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
-        let mut buf: Vec<u8> = Vec::new();
         let normal = InitReturnCode::NORMAL;
-        send_message(stream, &normal);
+        send_message(stream, &normal)?;
         Ok(())
     }
-
 }
 
 pub fn send_message<T: Serialize>(stream: &mut BufReader<TcpStream>, val: &T) -> Result<(), Error> {
@@ -201,7 +206,6 @@ pub fn send_message<T: Serialize>(stream: &mut BufReader<TcpStream>, val: &T) ->
         .write_all(serde_json::to_string(val).unwrap().as_bytes())?;
 
     stream.get_mut().write_all(b"\n")?;
-
     Ok(())
 }
 
