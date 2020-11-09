@@ -22,23 +22,19 @@ fn handle_connection(mut stream: TcpStream) {
 
     let get = b"GET / HTTP/1.1\r\n";
 
-    // 处理来自 根目录的消息 /
-    if buffer.starts_with(get) {
-        let contents = fs::read_to_string("hello.html").unwrap();
-        let response = format!("HTTP/1.1 200 Ok\r\n\r\n{}", contents);
 
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    }else { // 当不是来自根目录的时候 返回错误的消息
-        let status_line = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
-        let contents = fs::read_to_string("404.html").unwrap();
+    let (status_line, filename) = if buffer.starts_with(get) {
+        ("HTTP/1.1 200 OK\r\n\r\n", "hello.html")
+    }else {
+        ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "404.html")
+    };
 
-        let response = format!("{}{}", status_line, contents);
+    let contents = fs::read_to_string(filename).unwrap();
 
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    }
+    let response = format!("{}{}", status_line, contents);
 
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
 }
 
 
