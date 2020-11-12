@@ -10,10 +10,15 @@ fn main() {
     let mut rdr = csv::Reader::from_reader(io::stdin());
     // Loop over each record.
     for result in rdr.records() {
-        // An error may occur, so abort the program in an unfriendly way.
-        // We will make this more friendly later!
-        let record = result.expect("a CSV record");
-        // Print a debug version of the record.
-        println!("{:?}", record);
+        // Examine our Result.
+        // If there was no problem, print the record.
+        // Otherwise, print the error message and quit the problem.
+        match result {
+            Ok(record) => println!("{:?}", record),
+            Err(err) => {
+                println!("error reading CSV from <stdin>:\n{}", err);
+                std::process::exit(1);
+            }
+        }
     }
 }
