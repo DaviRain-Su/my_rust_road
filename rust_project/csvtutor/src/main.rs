@@ -1,14 +1,39 @@
 // This makes the csv crate accessible to your program.
 extern crate csv;
+extern crate serde;
+
+// This lets us write '#[derive(Derserialize)]'
+#[macro_use]
+extern crate serde_derive;
+
 
 // Import the standard library's I/O module so we can read from stdin.
 use std::error::Error;
-use std::ffi::OsString;
 use std::io;
+use std::ffi::OsString;
 use std::process;
-// use std::fs::File;
 use std::env;
-use std::collections::HashMap;
+
+// We don't need to derive 'Debug' (which doesn't require Serde), but it's a good
+// habit to do it for all your types.
+//
+// Notice that the field names in this struct are NOT in the same order as the
+// fields in the CSV data!
+#[derive(Debug, Deserialize)]
+// #[serde(rename_all = "PascalCase")]
+struct Record {
+    #[serde(rename = "Latitude")]
+    latitude : f64,
+    #[serde(rename = "Longitude")]
+    longitude: f64,
+    #[serde(rename = "Population")]
+    population: Option<u64>,
+    #[serde(rename = "City")]
+    city: String,
+    #[serde(rename = "State")]
+    state: String,
+}
+
 
 // The 'main' function is where your program starts executing.
 fn main() {
@@ -18,16 +43,10 @@ fn main() {
     }
 }
 
-// This introduces a type alias so that  we can conveniently reference our
-// record type.
-type Record = HashMap<String, String>;
 
 fn run() -> Result<(), Box<dyn Error>> {
 
     let mut rdr = csv::Reader::from_reader(io::stdin());
-    // Instead of creating an iterator with the 'records' method, we create
-    // an iterator with the 'deserialize' method.
-
     for result in rdr.deserialize() {
         let record  : Record = result?;
         println!("{:?}", record);
