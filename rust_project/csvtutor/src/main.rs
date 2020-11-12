@@ -2,9 +2,12 @@
 extern crate csv;
 
 // Import the standard library's I/O module so we can read from stdin.
-use std::io;
+// use std::io;
 use std::error::Error;
 use std::process;
+use std::ffi::OsString;
+use std::fs::File;
+use std::env;
 
 // The 'main' function is where your program starts executing.
 fn main() {
@@ -16,12 +19,21 @@ fn main() {
 
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let mut rdr = csv::Reader::from_reader(io::stdin());
+    let file_path = get_first_arg()?;
+    let file = File::open(file_path)?;
+    let mut rdr = csv::Reader::from_reader(file);
     for result in rdr.records() {
-        // This is effectively the same code as our 'match' in the
-        // previous example. In other words, '?' is syntactic sugar.
         let record = result?;
         println!("{:?}", record);
     }
     Ok(())
+}
+
+// Return the first positional argument sent to this process. If there are
+// no positional arguments, then this returns an errors.
+fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
+    match env::args_os().nth(1) {
+        None => Err(From::from("expected 1 argument, but got none")),
+        Some(file_path) => Ok(file_path),
+    }
 }
