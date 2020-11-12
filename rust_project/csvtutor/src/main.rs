@@ -17,35 +17,19 @@ fn main() {
     }
 }
 
+// This introduces a type alias so that  we can conveniently reference our
+// record type.
+type Record = (String, String, Option<u64>, f64, f64);
+
 fn run() -> Result<(), Box<dyn Error>> {
-    // let mut rdr = csv::ReaderBuilder::new().has_headers(false)
-    //     .delimiter(b';')
-    //     .double_quote(false)
-    //     .escape(Some(b'\\'))
-    //     .flexible(true)
-    //     .comment(Some(b'#'))
-    //     .from_reader(io::stdin());
+
     let mut rdr = csv::Reader::from_reader(io::stdin());
-    for result in rdr.records() {
-        let record = result?;
+    // Instead of creating an iterator with the 'records' method, we create
+    // an iterator with the 'deserialize' method.
 
-        let city = &record[0];
-        let state = &record[1];
-
-        // Some records are missing population counts , so if we can't
-        // parse a number, treat the population count as missing instead
-        // of returning an error.
-
-        let pop: Option<u64> = record[2].parse().ok();
-        // Lucky us!  Latitudes and longitudes are available for every record.
-        // Therefore, if one couldn't be parsed, return an error.
-        let latitude: f64 = record[3].parse()?;
-        let longitude: f64 = record[4].parse()?;
-
-        println!(
-            "City : {:?}, state: {:?}, pop : {:?}, latitude: {:?}, longitude : {:?}",
-            city, state, pop, latitude, longitude
-        );
+    for result in rdr.deserialize() {
+        let record  : Record = result?;
+        println!("{:?}", record);
     }
     Ok(())
 }
