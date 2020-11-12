@@ -8,6 +8,7 @@ use std::io;
 use std::process;
 // use std::fs::File;
 use std::env;
+use std::collections::HashMap;
 
 // The 'main' function is where your program starts executing.
 fn main() {
@@ -19,7 +20,7 @@ fn main() {
 
 // This introduces a type alias so that  we can conveniently reference our
 // record type.
-type Record = (String, String, Option<u64>, f64, f64);
+type Record = HashMap<String, String>;
 
 fn run() -> Result<(), Box<dyn Error>> {
 

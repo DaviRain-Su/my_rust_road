@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 csv = "*"
+serde = "*"
+serde_derive = "*"
