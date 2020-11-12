@@ -43,7 +43,7 @@ fn test_create_user() {
     use models::UserInfo;
 
     let conn = estable_connection();
-    let user = RegistryUser::new("davirain".to_string(), "12344567".to_string());
+    let user = RegistryUser::new("davirain", "12344567");
     println!("user = {:?}", user);
 
     let user_temp = UserInfo::create(

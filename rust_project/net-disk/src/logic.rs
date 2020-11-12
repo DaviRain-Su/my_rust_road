@@ -12,6 +12,8 @@ use super::command::{Commands, CommandsReturnCode, InitReturnCode};
 use crate::db::estable_connection;
 use crate::db::models::{UserInfo, UserPath, UserRequest};
 use crate::users::{LoginUser, RegistryUser};
+use crate::db::schema::user_info::columns::username;
+use rand::prelude::StdRng;
 
 /// 登录注册取消枚举体
 #[derive(Debug, Deserialize, Serialize)]
@@ -23,6 +25,8 @@ pub enum LRC {
 }
 
 impl LRC {
+
+    /// 处理是登录 注册 取消消息
     pub fn deal_lrc(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         match *self {
             // 处理登录时消息
@@ -44,50 +48,145 @@ impl LRC {
         }
     }
 
-    pub fn deal_cmd(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
+
+    pub fn deal_cmd(&self, stream: &mut BufReader<TcpStream>, username: &str) -> Result<(), Error> {
         let mut buf = Vec::new();
         recv_message(stream, &mut buf)?;
         debug!("deal cmd, buf = {:?}", buf);
 
+        // 解析传过来的命令
         let cmd: Commands = serde_json::from_slice(&buf)?;
         debug!("deal cmd, cmd = {:?}", cmd);
 
         match cmd {
-            Commands::CD(ref cd) => self.deal_cd(),
-            Commands::LS(ref ls) => self.deal_ls(),
-            Commands::RM(ref rm) => self.deal_rm(),
-            Commands::PWD(ref pwd) => self.deal_pwd(),
-            Commands::OTHERS(ref others) => self.deal_others(),
-            Commands::GETS(ref gets) => self.deal_gets(),
-            Commands::PUTS(ref puts) => self.deal_puts(),
+            Commands::CD(ref cd) => self.deal_cd(stream, cd , username),
+            Commands::LS(ref ls) => self.deal_ls(ls),
+            Commands::RM(ref rm) => self.deal_rm(rm),
+            Commands::PWD(ref pwd) => self.deal_pwd(pwd),
+            Commands::GETS(ref gets) => self.deal_gets(gets),
+            Commands::PUTS(ref puts) => self.deal_puts(puts),
+            Commands::OTHERS(ref others) => self.deal_others(others),
         }
     }
+    ///
+    /// cd ..
+    /// cd ~
+    /// cd -
+    /// cd /path/
+    /// other error
+    pub fn deal_cd(&self, stream: &mut BufReader<TcpStream>, args: &Option<Vec<String>>, username: &str) -> Result<(), Error> {
+        let mut old_path_name = String::new();
+        old_path_name.push_str(username);
+        debug!("old_path_name = {:?}", old_path_name);
 
-    pub fn deal_cd(&self) -> Result<(), Error> {
-        unimplemented!();
-    }
-    pub fn deal_ls(&self) -> Result<(), Error> {
+        let mut root_path = String::new();
+        root_path.push_str(&format!("{}:~$", username));
+        debug!("root_path = {:?}", root_path);
+
+        let mut buf = Vec::new();
+        recv_message(stream, &mut buf)?;
+
+        let old_path: String = serde_json::from_slice(&buf)?;
+        debug!("old_path = {:?}", old_path);
+
+        buf.clear();
+        recv_message(stream, &mut buf)?;
+        let mut cur_path : String = serde_json::from_slice(&buf)?;
+        debug!("cur_path = {:?}", cur_path);
+
+        let args = args.unwrap();
+
+        if args[1] == " " && cur_path == root_path
+            || args[1] == "." && cur_path == root_path
+            || args[1] == ".." && cur_path == root_path
+        {
+            cur_path = root_path.clone();
+            send_message(stream, &cur_path)?;
+            return Ok(());
+        }
+
+        // cd space
+        if args[1] == " " && cur_path == old_path {
+            cur_path = root_path.clone();
+            send_message(stream, &cur_path)?;
+            return Ok(());
+        }
+
+        // cd .
+        if args[1] == "." && cur_path == old_path {
+            cur_path = old_path.clone();
+            send_message(stream, &cur_path)?;
+            return Ok(());
+        }
+
+        // cd ..
+        if args[1] == ".." && cur_path == old_path {
+            let mut tmp_path = cur_path.clone();
+            let position = tmp_path.rfind("/").unwrap();
+            let mut tmp_path = &tmp_path[..position].to_string();
+            tmp_path.push('$');
+            cur_path = tmp_path.clone();
+
+            send_message(stream, &cur_path)?;
+            return Ok(());
+        }
+
+        // cd path
+        if args[1] != " " && cur_path == old_path {
+            unimplemented!()
+        }
+
+
         unimplemented!();
     }
 
-    pub fn deal_pwd(&self) -> Result<(), Error> {
+    ///
+    /// ls .
+    /// ls ..
+    /// ls ~
+    /// ls /path/
+    /// other error
+    pub fn deal_ls(&self, stream: &mut BufReader<TcpStream>,  cur_dir_num: u64) -> Result<(), Error> {
+        let mut file_list : Vec<String> = Vec::new();
+
+        // 查询数据中cur_dir_num下的所有文件
+        db_file_query_user_path(cur_dir_num, &mut file_list);
+        send_message(stream, &file_list)?;
+        return Ok(());
+    }
+
+    /// pwd
+    pub fn deal_pwd(&self, args: &Option<String>) -> Result<(), Error> {
         unimplemented!();
     }
 
-    pub fn deal_gets(&self) -> Result<(), Error> {
-        unimplemented!();
-    }
-    pub fn deal_puts(&self) -> Result<(), Error> {
-        unimplemented!();
-    }
-
-    pub fn deal_rm(&self) -> Result<(), Error> {
-        unimplemented!();
-    }
-    pub fn deal_others(&self) -> Result<(), Error> {
+    /// gets file
+    /// gets file1 file2 file3 扩展
+    ///
+    pub fn deal_gets(&self, args: &Option<Vec<String>>) -> Result<(), Error> {
         unimplemented!();
     }
 
+    /// puts file
+    /// puts file1 file2 file3
+    ///
+    pub fn deal_puts(&self, args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    /// rm file
+    /// rm -rf dir
+    ///
+    pub fn deal_rm(&self, args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    /// other error
+    pub fn deal_others(&self, args: &String) -> Result<(), Error> {
+        unimplemented!();
+    }
+
+    /// process login
     pub fn login(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let mut buf = Vec::new();
         debug!("In login buf = {:?}", buf);
@@ -107,6 +206,7 @@ impl LRC {
 
         // 得到salt
         let salt = ret_result.salt;
+        let username = ret_result.username;
         debug!("In login salt = {:?}", salt);
         debug!("In login crypto password = {:?}", ret_result.cryptpassword);
 
@@ -131,7 +231,7 @@ impl LRC {
             send_message(stream, &normal)?;
             debug!("In login, will in deal_cmd");
             // 进入业务逻辑处理
-            self.deal_cmd(stream)?;
+            self.deal_cmd(stream, &username)?;
         } else {
             let error = InitReturnCode::ERROR;
             debug!("In login error = {:?}", error);
@@ -148,6 +248,7 @@ impl LRC {
         Ok(())
     }
 
+    /// process registry
     pub fn registry(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let mut buf = Vec::new();
         debug!("In Registry, buf = {:?}", buf);
@@ -193,6 +294,7 @@ impl LRC {
         Ok(())
     }
 
+    /// process quit
     pub fn quit(&self, stream: &mut BufReader<TcpStream>) -> Result<(), Error> {
         let normal = InitReturnCode::NORMAL;
         send_message(stream, &normal)?;

@@ -13,7 +13,7 @@ extern crate crypto;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 
-use crate::command::{CommandsReturnCode, InitReturnCode};
+use crate::command::{CommandsReturnCode, InitReturnCode, Commands};
 use crate::users::{RegistryUser, LoginUser};
 
 /// 登录注册取消枚举体
@@ -102,21 +102,40 @@ pub fn login(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
     // read hash diggest
     let cryptpassword = hasher.result_str();
     debug!("cryptpassword = {}", cryptpassword);
-
     send_message(stream, &cryptpassword)?;
 
     let mut ret_result = Vec::new();
     recv_message(stream, &mut ret_result)?;
-
     debug!("ret_result = {:?}", ret_result);
     
     let ret: InitReturnCode = serde_json::from_slice(&ret_result)?;
     debug!("ret = {:?}", ret);
 
     // 解析返回的返回值
-    ret.parse();
+    // ret.parse();
+    match ret {
+        InitReturnCode::NORMAL => {
+            // 处理业务
+            deal_cmd(stream)?;
 
+        },
+        InitReturnCode::ERROR => {
+            deal_error(stream)?;
+        },
+    }
     Ok(())
+}
+
+pub fn deal_cmd(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
+    let mut input = String::new();
+    get_intput(&mut input);
+    let command = Commands::new(&input);
+    command.deal_command(stream)?;
+    Ok(())
+}
+
+pub fn deal_error(_stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
+    unimplemented!()
 }
 
 pub fn registry(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
@@ -154,11 +173,11 @@ pub fn registry(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn quit(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
+pub fn quit(_stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn other(stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
+pub fn other(_stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
     Ok(())
 }
 
@@ -167,15 +186,6 @@ pub fn get_intput(buf: &mut String) {
 }
 
 pub fn send_message<T: Serialize>(stream: &mut BufReader<&TcpStream>, val: &T) -> Result<(), Error> {
-    // stream
-    //     .get_mut()
-    //     .write_all(serde_json::to_string(val).unwrap().as_bytes())
-    //     .expect("Failed to write to server");
-
-    // stream
-    //     .get_mut()
-    //     .write_all(b"\n")
-    //     .expect("Failed to write to server");
     stream
         .get_mut()
         .write_all(serde_json::to_string(val).unwrap().as_bytes())?;
@@ -186,12 +196,6 @@ pub fn send_message<T: Serialize>(stream: &mut BufReader<&TcpStream>, val: &T) -
 }
 
 pub fn recv_message(stream: &mut BufReader<&TcpStream>, buf : &mut Vec<u8>) -> Result<(), Error> {
-    // let mut buf: Vec<u8> = Vec::new();
-    // let bytes_read = stream.read_until(b'\n', &mut buf).unwrap();
-    // if bytes_read == 0 {
-    //     debug!("recv successful!");
-    // }
-    // buf
     let bytes_read = stream.read_until(b'\n', buf)?;
     if bytes_read == 0 {
         return Ok(());

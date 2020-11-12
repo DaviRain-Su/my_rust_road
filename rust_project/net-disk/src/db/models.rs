@@ -8,6 +8,7 @@ use super::schema::user_request::dsl::user_request as user_request_dsl;
 
 use super::schema::user_path;
 use super::schema::user_path::dsl::user_path as user_path_dsl;
+use crate::db::schema::user_path::columns::ftype;
 
 #[derive(Queryable, Debug)]
 pub struct UserPath {
@@ -26,6 +27,7 @@ pub struct UserPath {
 pub struct NewUserPath {
     pub prenum: i32,
     pub fname: String,
+    pub ftype: String,
     pub pfname: String,
     pub md5: String,
     pub fsize: i32,
@@ -80,6 +82,7 @@ impl UserPath {
     pub fn create(
         prenum: i32,
         fname: &str,
+        ftype: &str,
         pfname: &str,
         md5: &str,
         fsize: i32,
@@ -87,7 +90,7 @@ impl UserPath {
         conn: &SqliteConnection,
     ) -> Self {
         if UserPath::by_md5(md5, conn).is_none() {
-            let new_user_path = Self::new_user_struct(prenum, fname, pfname, md5, fsize, vfname);
+            let new_user_path = Self::new_user_struct(prenum, fname, ftype, pfname, md5, fsize, vfname);
             diesel::insert_into(user_path_dsl)
                 .values(&new_user_path)
                 .execute(conn)
@@ -108,6 +111,7 @@ impl UserPath {
     fn new_user_struct(
         prenum: i32,
         fname: &str,
+        ftype: &str,
         pfname: &str,
         md5: &str,
         fsize: i32,
@@ -116,6 +120,7 @@ impl UserPath {
         NewUserPath {
             prenum,
             fname: fname.into(),
+            ftype: ftype.into(),
             pfname: pfname.into(),
             md5: md5.into(),
             fsize,

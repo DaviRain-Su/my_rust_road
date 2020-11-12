@@ -22,16 +22,22 @@ impl Commands {
             .chars()
             .map(|val| val.to_lowercase().to_string())
             .collect::<String>();
+        debug!("commands = {:?}", commands);
+
         let commands = commands.split(' ').collect::<Vec<&str>>();
         debug!("commands = {:?}", commands);
 
         let commands_len = commands.len();
+        debug!("command len = {}", commands_len);
 
         let command = commands[0];
+        debug!("command = {}", command);
+
         let commands = commands
             .iter()
             .map(|val| val.to_string())
             .collect::<Vec<String>>();
+        debug!("commands = {:?}", commands);
 
         if command == "cd" && (commands_len == 1 || commands_len == 2) {
             // 提前处理一些逻辑错误

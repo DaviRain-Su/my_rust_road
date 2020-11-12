@@ -3,6 +3,10 @@ use serde::{Deserialize, Serialize};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json;
+use std::io::BufReader;
+use std::net::TcpStream;
+use std::io::Error;
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum Commands {
@@ -34,6 +38,7 @@ impl Commands {
             .collect::<Vec<String>>();
 
         if command == "cd" && (commands_len == 1 || commands_len == 2) {
+            
             Commands::CD(Some(commands))
         } else if command == "ls" && (commands_len == 1 || commands_len == 2) {
             Commands::LS(Some(commands))
@@ -49,7 +54,58 @@ impl Commands {
             Commands::OTHER(format!("No this command : {:?}", commands))
         }
     }
+
+    pub fn deal_command(&self, stream: &mut BufReader<&TcpStream>) -> Result<(), Error> {
+        match *self { 
+            Commands::CD(ref cd) => {
+                self.deal_cd(stream, cd)?;
+            },
+            Commands::LS(ref ls) => {
+                self.deal_ls(stream, ls)?;
+            },
+            Commands::PWD(ref pwd) => {
+                self.deal_pwd(stream, pwd)?;
+            },
+            Commands::REMOVE(ref rm) => {
+                self.deal_remove(stream, rm)?;
+            },
+            Commands::GETS(ref gets) => {
+                self.deal_gets(stream, gets)?;
+            },
+            Commands::PUTS(ref puts) => {
+                self.deal_puts(stream, puts)?;
+            },
+            Commands::OTHER(ref others) => {
+                self.deal_other(stream, others)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn deal_cd(&self, _stream: &BufReader<&TcpStream>, _args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_ls(&self, _stream: &BufReader<&TcpStream>, _args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_pwd(&self, _stream : &BufReader<&TcpStream>, _args: &Option<String>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_remove(&self, _stream: &BufReader<&TcpStream>, _args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_gets(&self, _stream: &BufReader<&TcpStream>, _args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_puts(&self, _stream: &BufReader<&TcpStream>, _args: &Option<Vec<String>>) -> Result<(), Error> {
+        unimplemented!()
+    }
+    fn deal_other(&self, _stream: &BufReader<&TcpStream>, _args: &String) -> Result<(), Error> {
+        unimplemented!()
+    }
+
 }
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CommandsReturnCode {
