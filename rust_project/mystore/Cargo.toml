@@ -12,6 +12,6 @@ actix-web = "*"
 serde = "*"
 serde_derive = "*"
 serde_json = "*"
-diesel = {version = "*", features =["sqlite"]}
+diesel = {version = "*", features =["mysql"]}
 dotenv = "*"
 futures = "*"

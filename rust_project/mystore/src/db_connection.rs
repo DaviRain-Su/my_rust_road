@@ -1,9 +1,9 @@
+
 use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
 use dotenv::dotenv;
 use std::env;
 
-pub fn establish_connection() -> SqliteConnection {
+pub fn establish_connection() -> MysqlConnection {
     dotenv().ok(); // This will load our .env file.
 
     // Load the DATABASES_URL env  variable into database_url, in case of error
@@ -14,6 +14,6 @@ pub fn establish_connection() -> SqliteConnection {
     // the ampersand(&) means we're taking a reference for the variable.
     // The function you need to call will tell you if you have to pass a
     // reference or a value, borrow it or not.
-    SqliteConnection::establish(&database_url)
+    MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }

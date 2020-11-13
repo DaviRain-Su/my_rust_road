@@ -1,7 +1,7 @@
 table! {
     products (id) {
         id -> Integer,
-        name -> Text,
+        name -> Varchar,
         stock -> Float,
         price -> Nullable<Integer>,
     }
