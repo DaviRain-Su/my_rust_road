@@ -6,48 +6,49 @@ use structopt::StructOpt;
 /// A key-value database
 struct Opts {
     #[structopt(subcommand)]
-    cmd: Command,
+    pub cmd: Command,
 }
 
 #[derive(StructOpt, Debug)]
 enum  Command {
-    #[structopt(name = "set")]
-    /// Set the value of a string key to a string
-    Set {
-        key: String,
-        value: String,
-    },
-    #[structopt(name = "get")]
-    /// Get the string value of a given string key
-    Get {
-        key: String,
-    },
-    #[structopt(name = "rm")]
-    /// Remove a given key
-    Rm {
-        key: String,
-    }
+    Set(Set),
+    Get(Get),
+    Rm(Rm),
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "set")]
+/// Set the value of a string key to a string
+pub struct Set {
+    key: String,
+    value: String,
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "get")]
+/// Get the string value of a given string key
+pub struct Get {
+    key: String,
+}
+#[derive(Debug, StructOpt)]
+#[structopt(name = "rm")]
+/// Remove a given key
+pub struct Rm {
+    key: String,
 }
 fn main() {
     let opts : Opts = Opts::from_args();
 
     match opts.cmd {
-        Command::Set {
-            key: _key,
-            value: _value,
-        } => {
+        Command::Set(Set{key:_key, value:_value}) => {
             eprintln!("unimplemented");
             exit(1);
         },
-        Command::Get {
-            key: _key,
-        } => {
+        Command::Get(Get{key:_key}) => {
             eprintln!("unimplemented");
             exit(1);
         },
-        Command::Rm {
-            key: _key,
-        } => {
+        Command::Rm(Rm{key: _key}) => {
             eprintln!("unimplemented");
             exit(1);
         }
