@@ -14,11 +14,13 @@ extern crate serde_derive;
 extern crate actix_web;
 extern crate futures;
 use actix_web::{web, App, HttpServer};
+use db_connection::establish_connection;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
+            .data(establish_connection())
             .service(
                 web::resource("/products")
                     .route(web::get().to(handlers::products::index))

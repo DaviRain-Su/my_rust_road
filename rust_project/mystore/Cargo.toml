@@ -12,6 +12,11 @@ actix-web = "*"
 serde = "*"
 serde_derive = "*"
 serde_json = "*"
-diesel = {version = "*", features =["mysql"]}
+diesel = {version = "*", features =["mysql","r2d2"]}
 dotenv = "*"
 futures = "*"
+jsonwebtoken ="*"
+bcrypt = "*"
+chrono = { version = "*", features = ["serde"]}
+#csrf-token = { git = "http://git@github.com/3dom-co-jp/csrf-token.git" }
+csrf-token = { git = "https://git@github.com/future-science-research/csrf-token.git", branch="v0.2.x" }

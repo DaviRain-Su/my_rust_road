@@ -1,7 +1,7 @@
-use crate::db_connection::establish_connection;
 use crate::schema::products;
 use crate::schema::products::dsl::products as products_dsl;
 use diesel::prelude::*;
+
 
 #[derive(Queryable, Serialize, Deserialize)]
 pub struct Product {
@@ -12,22 +12,22 @@ pub struct Product {
 }
 
 impl Product {
-    pub fn by_id(id: &i32) -> Result<Product, diesel::result::Error> {
-        let connection = establish_connection();
-        products_dsl.find(id).first(&connection)
+    pub fn by_id(id: &i32, connection: &MysqlConnection) -> Result<Product, diesel::result::Error> {
+        // let connection = establish_connection();
+        products_dsl.find(id).first(connection)
     }
-    pub fn delete(id: &i32) -> Result<(), diesel::result::Error> {
-        let connection = establish_connection();
-        diesel::delete(products_dsl.find(id)).execute(&connection)?;
+    pub fn delete(id: &i32, connection: &MysqlConnection) -> Result<(), diesel::result::Error> {
+        // let connection = establish_connection();
+        diesel::delete(products_dsl.find(id)).execute(connection)?;
         Ok(())
     }
 
-    pub fn update(id: &i32, new_product: &NewProduct) -> Result<(), diesel::result::Error> {
-        let connection = establish_connection();
+    pub fn update(id: &i32, new_product: &NewProduct, connection: &MysqlConnection) -> Result<(), diesel::result::Error> {
+        // let connection = establish_connection();
 
         diesel::update(products_dsl.find(id))
             .set(new_product)
-            .execute(&connection)?;
+            .execute(connection)?;
         Ok(())
     }
 }
@@ -36,11 +36,11 @@ impl Product {
 pub struct ProductList(pub Vec<Product>);
 
 impl ProductList {
-    pub fn list() -> Self {
-        let connection = establish_connection();
+    pub fn list(connection: &MysqlConnection) -> Self {
+        // let connection = establish_connection();
         let result = products_dsl
             .limit(10)
-            .load::<Product>(&connection)
+            .load::<Product>(connection)
             .expect("Error loading products");
 
         //We return a value by leaving it without a comma
@@ -61,15 +61,15 @@ impl NewProduct {
     // just for fun remove the & after writing the handler and
     // take a look at the error, to make it work we would need to use into_inner (https://actix.rs/api/actix-web/stable/actix_web/struct.Json.html#method.into_inner)
     // which points to the inner value of the Json request.
-    pub fn create(&self) -> Option<Product> {
-        let connection = establish_connection();
+    pub fn create(&self, connection: &MysqlConnection) -> Option<Product> {
+        // let connection = establish_connection();
 
         diesel::insert_into(products_dsl)
             .values(self)
-            .execute(&connection)
+            .execute(connection)
             .expect("Error create product");
 
-        Self::by_name(&self.name, &connection)
+        Self::by_name(&self.name, connection)
     }
 
     pub fn by_name(name_str: &str, conn: &MysqlConnection) -> Option<Product> {

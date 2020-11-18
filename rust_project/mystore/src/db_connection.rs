@@ -1,18 +1,21 @@
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
+use diesel::r2d2::{Pool, PooledConnection, ConnectionManager, PoolError};
 
-pub fn establish_connection() -> MysqlConnection {
+pub type MysqlPool = Pool<ConnectionManager<MysqlConnection>>;
+pub type MysqlPooledConnection = PooledConnection<ConnectionManager<MysqlConnection>>;
+
+fn init_pool(database_url: &str) -> Result<MysqlPool, PoolError> {
+    let manager = ConnectionManager::<MysqlConnection>::new(database_url);
+    Pool::builder().build(manager)
+}
+
+
+pub fn establish_connection() -> MysqlPool {
     dotenv().ok(); // This will load our .env file.
 
-    // Load the DATABASES_URL env  variable into database_url, in case of error
-    // it will through a message "DATABASE_URL must be sent"
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be sent");
 
-    // Load the configuration in a postgres connection,
-    // the ampersand(&) means we're taking a reference for the variable.
-    // The function you need to call will tell you if you have to pass a
-    // reference or a value, borrow it or not.
-    MysqlConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    init_pool(&database_url).expect("Failed to create pool")
 }
