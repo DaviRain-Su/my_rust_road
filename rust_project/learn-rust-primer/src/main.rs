@@ -1,4 +1,7 @@
 mod ch1;
+mod ch2;
+mod ch3;
+
 // use std::io;
 // use std::io::Write;
 use std::error::Error;
@@ -8,8 +11,6 @@ use std::path::Path;
 
 // #[warn(deprecated)]
 fn main() {
-
-
     // 标准输入输出的
     // print!("请输入一个字符串: "); // 不会出现预期的提示字符串， 因为行没有被刷新。
     // // 如果想要达到预期的效果就要显式的刷新。
@@ -46,14 +47,19 @@ fn main() {
     let display = path.display();
 
     let mut file = match File::create(&path) {
+        // #[warn(deprecated)]
         Err(why) => panic!("Couldn't create {}: {}", display, Error::description(&why)),
         Ok(file) => file,
     };
 
     match file.write_all(LOREM_IPSUM.as_bytes()) {
         Err(why) => {
-            panic!("Couldn't write to {}: {}", display, Error::description(&why));
-        },
+            panic!(
+                "Couldn't write to {}: {}",
+                display,
+                Error::description(&why)
+            );
+        }
         Ok(_) => println!("successfully wrote to {}", display),
     }
 }

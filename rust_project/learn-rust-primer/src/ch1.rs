@@ -1,7 +1,6 @@
 //! Rust 快速入门
 // #[warn(unused_assignments)]
 
-
 /// print hello world
 #[test]
 fn hello_world() {
@@ -9,7 +8,6 @@ fn hello_world() {
     let rust = "Rust";
     println!("Hello, {}!", rust);
 }
-
 
 #[test]
 #[allow(dead_code)]
@@ -25,7 +23,8 @@ fn variable_bind() {
 #[test]
 #[allow(dead_code)]
 fn mut_variable_bind() {
-    let mut a : f64 = 1.0; // Warning: value assigned to 'a' is never read
+    // #[warn(unused_assignments)]
+    let mut a: f64 = 1.0; // Warning: value assigned to 'a' is never read
     let _b = 2.0f32;
 
     a = 2.0;
@@ -40,7 +39,7 @@ fn mut_variable_bind() {
 
 #[test]
 fn deconstruction_variable() {
-    let (a, mut b) : (bool, bool) = (true, false);
+    let (a, mut b): (bool, bool) = (true, false);
     println!("a = {}, b = {}", a, b);
     // a = false; // cannot assign twice to immutable variable
 
@@ -48,13 +47,12 @@ fn deconstruction_variable() {
     assert_eq!(a, b);
 }
 
-
 #[test]
 #[allow(dead_code)]
 fn rust_type() {
     // boolean type
     let t = true;
-    let f : bool = false;
+    let f: bool = false;
     println!("t = {:?}", t);
     println!("f = {:?}", f);
 
@@ -83,9 +81,8 @@ fn rust_type() {
     println!("a = {:?}", a);
     let middle = &a[1..4];
     println!("middle = {:?}", middle);
-    let ten_zero: [f64;10] = [0.; 10];
+    let ten_zero: [f64; 10] = [0.; 10];
     println!("ten_zero = {:?}", ten_zero);
-
 
     // tuples
     let tuple: (i32, &str) = (50, "hello");
@@ -100,9 +97,7 @@ fn rust_type() {
     println!("x = {:?}", 5);
     let raw = &x as *const i32;
     println!("raw = {:?}", raw);
-    let points_at = unsafe {
-        *raw
-    };
+    let points_at = unsafe { *raw };
     println!("points_ar = {:?}", points_at);
 
     // functions
@@ -129,8 +124,8 @@ fn rust_type() {
 }
 
 #[test]
-fn array_type () {
-    let mut array = [0;3];
+fn array_type() {
+    let mut array = [0; 3];
     array[1] = 1;
     array[2] = 2;
 
@@ -213,14 +208,13 @@ fn string_type() {
 
 #[test]
 fn struct_type() {
-
     // structs
     #[derive(Debug)]
     struct Point {
         x: i32,
         y: i32,
     }
-    let point = Point { x: 0, y: 0};
+    let point = Point { x: 0, y: 0 };
     println!("point = {:?}", point);
 
     // tuple structs
@@ -246,7 +240,6 @@ fn struct_type() {
     let Inches(integer_length) = length;
     println!("integer length = {:?}", integer_length);
 
-
     // unit-like structs
     #[derive(Debug)]
     struct EmptyStrcut;
@@ -262,9 +255,9 @@ fn struct_type() {
 
     let origin = Point3d::default();
     println!("origin = {:?}", origin);
-    let point = Point3d{ y: 1, ..origin };
+    let point = Point3d { y: 1, ..origin };
     println!("point = {:?}", point);
-    let Point3d { x: x0, y: y0, ..} = point;
+    let Point3d { x: x0, y: y0, .. } = point;
     println!("x0 = {}, y0 = {}", x0, y0);
 
     // struct A {
@@ -279,11 +272,13 @@ fn struct_type() {
         x: i32,
         y: Cell<i32>,
     }
-    let a = A {x: 5, y: Cell::new(6) };
+    let a = A {
+        x: 5,
+        y: Cell::new(6),
+    };
     println!("a = {:?}", a);
     a.y.set(7);
     println!("a = {:?}", a);
-
 }
 
 #[allow(dead_code)]
@@ -294,7 +289,7 @@ mod graph {
         y: i32,
     }
     pub fn inside_fn() {
-        let p = Point{ x: 1, y: 2};
+        let p = Point { x: 1, y: 2 };
         println!("p.x = {}, p.y = {}", p.x, p.y);
     }
 }
@@ -319,7 +314,7 @@ fn test_if_statement() {
     // unnecessary parentheses around assigned value
 
     // let z: i32 = if x == 5 { 10; } else { 15; }; // expected 'i32', found '()'
-        // help: consider removing this semicolon
+    // help: consider removing this semicolon
 }
 
 #[test]
@@ -337,17 +332,17 @@ fn enum_type() {
     enum Message {
         Quit,
         ChangeColor(i32, i32, i32),
-        Move{x: i32, y: i32},
+        Move { x: i32, y: i32 },
         Write(String),
     }
 
-    let m: Message = Message::Move {x: 3, y: 4};
+    let m: Message = Message::Move { x: 3, y: 4 };
     println!("m = {:?}", m);
     let color: Message = Message::ChangeColor(23, 23, 23);
     println!("color = {:?}", color);
-    let quit : Message = Message::Quit;
+    let quit: Message = Message::Quit;
     println!("quit = {:?}", quit);
-    let write : Message = Message::Write(String::from("hello, world"));
+    let write: Message = Message::Write(String::from("hello, world"));
     println!("write = {:?}", write);
 }
 
@@ -373,13 +368,13 @@ fn test_match_statement() {
     let day = 5;
     match day {
         0 | 6 => println!("Weekend"),
-        1 ..= 5 => println!("Weekday"), // '..=' for an inclusive range
+        1..=5 => println!("Weekday"), // '..=' for an inclusive range
         _ => println!("invalid"),
     }
 
     let x = 1;
     match x {
-        e @ 1 ..= 5 => println!("got a range element {}", e),
+        e @ 1..=5 => println!("got a range element {}", e),
         _ => println!("anything"),
     }
 
@@ -397,7 +392,7 @@ fn test_match_statement() {
         ref mut mr => {
             println!("Got a mutable reference to {}", mr);
             // mr = 3;
-        },
+        }
     }
 
     let pair = (0, -2);
@@ -412,12 +407,12 @@ fn test_match_statement() {
         y: i32,
     }
 
-    let origin = Point{ x: 0, y: 0};
+    let origin = Point { x: 0, y: 0 };
     match origin {
-        Point{ x, ..} => println!("x is {}", x),
+        Point { x, .. } => println!("x is {}", x),
     }
 
-    enum OptionalInt{
+    enum OptionalInt {
         Value(i32),
         Missing,
     }
@@ -472,7 +467,8 @@ fn test_function() {
 
     let mut num = 5;
     {
-        let mut add_num = move | x: i32| num += x;
+        #[warn(unused_variables)]
+        let mut add_num = move |x: i32| num += x;
 
         add_num(5);
         // println!("5 add num is {:?}", add_num(5));
@@ -484,7 +480,8 @@ fn test_function() {
     // fn add_one(x: i32) -> i32 { x + 1}
 
     fn apply<F>(f: F, y: i32) -> i32
-        where F: Fn(i32) -> i32
+    where
+        F: Fn(i32) -> i32,
     {
         f(y) * y
     }
@@ -517,9 +514,7 @@ fn test_function() {
     let z1 = apply(add_num, 2);
     let z2 = apply(translate, 2);
     println!("z0 = {}, z1 = {}, z2 = {}", z0, z1, z2);
-
 }
-
 
 #[test]
 #[allow(dead_code)]
@@ -532,16 +527,18 @@ fn test_method() {
 
     impl Circle {
         pub fn new(x: f64, y: f64, radius: f64) -> Self {
-            Self {
-                x, y, radius
-            }
+            Self { x, y, radius }
         }
         pub fn area(&self) -> f64 {
             std::f64::consts::PI * (self.radius * self.radius)
         }
     }
 
-    let c = Circle{ x: 0., y: 0., radius: 2.};
+    let c = Circle {
+        x: 0.,
+        y: 0.,
+        radius: 2.,
+    };
     println!("circle area = {}", c.area());
 
     // use associated function and method chaining.
@@ -550,8 +547,8 @@ fn test_method() {
 
 #[test]
 #[allow(dead_code)]
-fn test_trait () {
-    trait  HashArea {
+fn test_trait() {
+    trait HashArea {
         fn area(&self) -> f64;
     }
 
@@ -585,14 +582,16 @@ fn test_trait () {
 
     use std::fmt::Debug;
 
-    fn foo<T: Clone, K : Clone + Debug>(x: T, y: K) {
+    fn foo<T: Clone, K: Clone + Debug>(x: T, y: K) {
         let _x = x.clone();
 
         let _y = y.clone();
         println!("y = {:?}", y);
     }
     fn bar<T, K>(x: T, y: K)
-        where T: Clone, K: Clone + Debug
+    where
+        T: Clone,
+        K: Clone + Debug,
     {
         let _x = x.clone();
         let _y = y.clone();
@@ -608,7 +607,7 @@ fn test_trait () {
         }
     }
 
-    trait FooBar : Foo {
+    trait FooBar: Foo {
         fn foobar(&self);
     }
 
@@ -649,12 +648,11 @@ fn test_trait () {
 
     let c = C;
     c.display(); // A / B / C
-    // A::display(&c); // A
-    // B::display(&c); // B
+                 // A::display(&c); // A
+                 // B::display(&c); // B
     <C as A>::display(&c);
     <C as B>::display(&c);
 }
-
 
 #[test]
 #[allow(dead_code)]
@@ -668,15 +666,14 @@ fn test_generic() {
 
     // generic structs
     #[derive(Debug)]
-    struct  Point<T> {
+    struct Point<T> {
         x: T,
         y: T,
     }
-    let _init_origin = Point{x: 0, y: 0};
+    let _init_origin = Point { x: 0, y: 0 };
     println!("init origin = {:?}", _init_origin);
-    let _float_origin = Point{ x: 0., y: 0.};
+    let _float_origin = Point { x: 0., y: 0. };
     println!("float origin = {:?}", _float_origin);
-
 
     // use generic parameters
     // trait Graph<N, E> {
@@ -694,10 +691,10 @@ fn test_generic() {
         type E;
 
         fn has_edge(&self, node1: &Self::N, node2: &Self::N) -> bool;
-        fn edge(&self, node: &Self::N)  -> Vec<Self::E>;
+        fn edge(&self, node: &Self::N) -> Vec<Self::E>;
     }
 
-    fn distance<G: Graph> (_graph: &G, _start: &G::N, _end: &G::N) -> u32 {
+    fn distance<G: Graph>(_graph: &G, _start: &G::N, _end: &G::N) -> u32 {
         unimplemented!()
     }
 
@@ -720,7 +717,6 @@ fn test_generic() {
         }
     }
 }
-
 
 #[test]
 fn test_input_output() {
@@ -748,7 +744,6 @@ fn test_input_output() {
     // println!("You typed: {}", input.trim());
 }
 
-
 #[test]
 fn test_output() {
     print!("This ");
@@ -764,5 +759,4 @@ fn test_output() {
 
     println!("hello there!");
     println!("format {} arguments", "some");
-
 }
