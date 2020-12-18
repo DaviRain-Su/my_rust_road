@@ -1,6 +1,5 @@
-
 [package]
-name = "learn-rust-primer"
+name = "rust-by-example"
 version = "0.1.0"
 authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
 edition = "2018"

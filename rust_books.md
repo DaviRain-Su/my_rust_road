@@ -194,3 +194,11 @@
 
 ## The Ecosystem of Crates
 
+
+
+# Rust Standard Library Coookbook
+
+> Over 75 recipes to leverage the power of Rust
+
+
+
