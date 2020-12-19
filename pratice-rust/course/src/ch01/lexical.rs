@@ -102,7 +102,6 @@ pub fn ident_show() {
 
 */
 pub mod outer_module {
-
     //! -模块级文档注释，置于模块头部
     //!！ - 模块级文档注释，但是和上面注释置于同一行
 
