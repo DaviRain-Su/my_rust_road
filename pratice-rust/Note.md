@@ -104,3 +104,161 @@ Rust将为各个领域的基础设施建设做出贡献，未来也许在多个�
 
 
 
+## 语法面面观
+
+### 词法结构
+
+两大知识点
+
+- Rust语言版本说明
+- Rust词法结构
+
+#### Rust语言版本说明
+
+- Rust语言的版本包括以下三个相互正交的概念：
+  - 语义化版本(Sem Ver, Semantic Versioning)
+  - 发行版本
+  - Edition版次
+
+
+
+##### 语义化版本(Sem Ver, Semantic Versioning)
+
+- 其格式为：主版本号.次版本号.修订号， 依次用句号隔开
+- 简单说一下语义化版本号递增规则：
+  - 主版本号：当做了不兼容的API修改
+  - 次版本号：当做了向下兼容的功能性新增
+  - 修订号：当做了向下兼容的问题修正
+
+
+
+##### 发行版本
+
+- Master -> Nightly
+- beta -> Beta
+- Stable -> Stable 
+
+
+
+##### Edition 版次
+
+- 2015 Edition
+- 2018 Edition (1.31.*)
+- 2021 Edition
+
+#### 词法结构
+
+##### 内容：
+
+- 了解Rust编译过程
+- 六大词法结构
+
+##### Rust编译过程
+
+- Rust Code(UTF-8) 分词
+- Tokens 解析
+- AST 降级
+- HIR 降级 版次的概念在这一层就没有了
+- MIR 优化
+- LLVM IR  优化
+- 0/1
+
+##### Rust 词法结构
+
+- 包含六大部分
+  - 关键字 keywords
+  - 标识符 Identifier
+  - 注释 Comment
+  - 空白 Whitespace
+  - 词条 Tokens
+  - 路径 Path
+
+###### 关键字
+
+- 严格关键字 Strict
+  - As, break, const, contunue, crate, if, else, struct, enum, true, false, fn, for, in, let, loop, impl, mod, match, move, mut, pub, ref, return, self, Self, static, super, trait, type, unsafe, use, where, while, async, await, dyn, main
+- 保留字 Reserved 
+  - Abstratct, become, box, do, final, macro, override, priv, typeof, unsized, virtual, yield, try
+  - 被保留的关键字不代表将来一定会使用
+- 弱关键字 Weak
+- 2018 Edition: union, 'static
+  - 2015 Edition: dyn
+  - 被保留的关键字不代表将来一定会使用
+
+###### 标识符
+
+```rust
+let thinking = "thinking";
+let thinging123_ = "thinking 123";
+
+// error : invalid suffix 'thinking' for integer literal
+// let 321_thinking = "thinking";
+
+// ok 
+let _321_thinking = "thinking";
+
+// non-ascii ident
+// RFC: https://github.com/rust-lang/rfcs/blob/master/text/2457-non-ascii-idents.md
+// error: unknown start of token: \u{1f914}
+let 🐯 = "thinking ";
+```
+
+
+
+##### 注释
+
+```rust
+pub mod outer_module {
+  //! - 模块级文档注释，置于模块头部
+  //!! - 模块级文档注释, 
+}
+```
+
+
+
+###### 空白
+
+- Rust 中空白符包括: \n, \t, tab 等
+- 任何形式的空白符在Rust中只用于分隔标记，没有语义意义。
+
+
+
+###### 词条
+
+- 语言项 item 基于的语言项
+
+- 块 Block
+
+- 语句 Stmt
+
+- 表达式 Expr
+
+- 模式 Pattern
+
+- 关键字 Keyword
+
+- 标识符 ident
+
+- 字面量 Literal
+
+- 生命周期 Lifetime
+
+- 可见性 Vis
+
+- 标点符号 Punctuation
+
+- 分隔符 delimiter
+
+- 词条树 Token Tree
+
+- 属性 Attribute
+
+  
+
+###### 路径
+
+- 
+
+- 
+- 
+
