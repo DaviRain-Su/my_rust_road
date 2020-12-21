@@ -13,7 +13,7 @@ fn count_range(numbers: &[i32], start: i32, end: i32) -> i32 {
 }
 
 fn get_duplication(numbers: &[i32]) -> i32 {
-    println!("number len = {}", numbers.len());
+    // println!("number len = {}", numbers.len());
     if numbers.len() == 0 {
         return -1;
     }
@@ -23,10 +23,10 @@ fn get_duplication(numbers: &[i32]) -> i32 {
 
     while start <= end {
         let middle = ((end - start) >> 1) + start;
-        let count = count_range(numbers, start, end);
-        println!("count = {}", count);
+        let count = count_range(numbers, start, middle);
+        // println!("count = {}", count);
         if start == end {
-            println!("start = {}, end = {}", start, end);
+            // println!("start = {}, end = {}", start, end);
             if 1 < count {
                 return start;
             } else {
