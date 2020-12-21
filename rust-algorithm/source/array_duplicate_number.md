@@ -90,6 +90,44 @@ bool duplicate(int numbers[], int length, int* duplication) {
 ```
 
 ## Code(Go) 
+```go
+func findRepeatNumber(nums []int) int {
+    for i := 0; i < len(nums); i++ {
+        for ; nums[i]!=i; {
+            if nums[i] == nums[nums[i]] {
+                return nums[i];
+            }
+
+            temp := nums[i];
+            nums[i] = nums[temp];
+            nums[temp] = temp;
+        }
+    }
+    return 0;
+}
+```
+
+
+
 ## Code(Python)
+
 ## Code(C++)
+
+```c++
+    int findRepeatNumber(vector<int>& nums) {
+        int len = nums.size();
+        for(int i = 0; i < len; i++) {
+            while (nums[i] != i) {
+                if (nums[i] == nums[nums[i]]) {
+                    return nums[i];
+                }
+                swap(nums[i], nums[nums[i]]);
+            }
+        }
+        return 0;
+    }
+```
+
+
+
 ## Code(Java)
