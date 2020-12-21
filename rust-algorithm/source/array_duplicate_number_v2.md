@@ -21,4 +21,65 @@
 接下来再把1 ~ 4的范围一分为二，一段是1，2两个数字，另一段是3，4两个数字。数字1或者2在数组中一共出现了两次，我们再统计3，4在数组中出现的次数。
 他们一共出现了三次。这意味着3，4；两个数字中一定有重复了。我们再分别统计这两个数字在数组中出现的次数，接着我们发现数字3出现了两次，是一个重复的数字。
 
+## Code(Rust)
 
+```rust
+fn count_range(numbers: &[i32], start: i32, end: i32) -> i32 {
+    println!("len is {}", numbers.len());
+    if numbers.len() == 0 {
+        return 0;
+    }
+    let mut count = 0;
+    for i in 0..numbers.len() {
+        if start <= numbers[i] && numbers[i] <= end {
+            count += 1;
+        }
+    }
+    count
+}
+
+fn get_duplication(numbers: &[i32]) -> i32 {
+    // println!("number len = {}", numbers.len());
+    if numbers.len() == 0 {
+        return -1;
+    }
+
+    let mut start = 1;
+    let mut end = (numbers.len() - 1) as i32;
+
+    while start <= end {
+        let middle = ((end - start) >> 1) + start;
+        let count = count_range(numbers, start, middle);
+        // println!("count = {}", count);
+        if start == end {
+            // println!("start = {}, end = {}", start, end);
+            if 1 < count {
+                return start;
+            } else {
+                break;
+            }
+        }
+
+        if (middle - start + 1) < count {
+            end = middle;
+        } else {
+            start = middle + 1;
+        }
+    }
+    -1
+}
+
+#[test]
+fn test_duplicate() {
+    let arr = [2, 3, 5, 4, 3, 2, 6, 7];
+    // let arr = [0, 1, 0]; TODO: Issues
+    let ret = get_duplication(&arr);
+    println!("ret = {}", ret);
+}
+```
+
+## Code(C)
+## Code(Go)
+## Code(Python3)
+## Code(C++)
+## Code(Java)
