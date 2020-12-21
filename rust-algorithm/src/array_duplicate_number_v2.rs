@@ -46,6 +46,7 @@ fn get_duplication(numbers: &[i32]) -> i32 {
 #[test]
 fn test_duplicate() {
     let arr = [2, 3, 5, 4, 3, 2, 6, 7];
+    // let arr = [0, 1, 0]; TODO: Issues
     let ret = get_duplication(&arr);
     println!("ret = {}", ret);
 }
