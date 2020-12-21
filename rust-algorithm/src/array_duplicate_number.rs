@@ -39,13 +39,12 @@ fn duplicate(numbers: &mut [i32], duplication: &mut i32) -> bool {
             // let temp = numbers[index];
             // numbers[index] = numbers[temp as usize];
             // numbers[temp as usize] = temp;
-            unsafe  {
+            unsafe {
                 let x = &mut numbers[index] as *mut i32;
                 let y = &mut numbers[numbers[index] as usize] as *mut i32;
                 ptr::swap(x, y);
             }
         }
-
     }
 
     false
