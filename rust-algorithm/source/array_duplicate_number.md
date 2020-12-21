@@ -111,6 +111,22 @@ func findRepeatNumber(nums []int) int {
 
 ## Code(Python)
 
+```python
+    def findRepeatNumber(self, nums: List[int]) -> int:
+        for index in range(0,len(nums)) :
+            while (nums[index] != index) :
+                if (nums[index] == nums[nums[index]]) :
+                    return nums[index]
+
+                temp = nums[index]
+                nums[index] = nums[temp]
+                nums[temp] = temp
+
+        return 0
+```
+
+
+
 ## Code(C++)
 
 ```c++
