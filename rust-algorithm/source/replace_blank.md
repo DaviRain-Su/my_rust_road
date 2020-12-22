@@ -23,8 +23,8 @@
 
 所有的字符都只复制了一次，因此这个算法的时间效率是O(n)
 
-![attra](https://github.com/DaviRain-Su/my_rust_road/blob/master/rust-algorithm/pic/replace-blank.png)
 ![replace-blank](../pic/replace-blank.png)
+
 ## Code(rust)
 
 ```rust
