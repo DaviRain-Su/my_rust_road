@@ -1,5 +1,5 @@
 // replace blank
-fn replace_blank(mut par_str: String) -> String {
+fn replace_blank(par_str: String) -> String {
     if par_str.len() == 0 {
         return "".to_string();
     }
