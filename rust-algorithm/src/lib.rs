@@ -4,3 +4,4 @@ mod replace_blank;
 mod string;
 mod revrese;
 mod linkedlist;
+mod power;
