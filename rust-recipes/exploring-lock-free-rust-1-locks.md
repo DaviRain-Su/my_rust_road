@@ -142,5 +142,52 @@ fn main() {
 
 Rust的Mutex类型提供了对其保护的值的读写访问，使用适当的操作系统基元来确保一次只能由一个线程完成。这里是LazyTransform的一个实现，更新为使用mutex。
 
+```rust
+use std::sync::Mutex;
+struct LazyState<T, S> {
+    source: Option<S>,
+    value: Option<T>,
+}
 
+pub struct LazyTransform<T, S, FN> {
+    transform_fn: FN,
+    state: Mutex<LazyState<T, S>>,
+}
+impl<T: Clone, S, FN: Fn(S) -> Option<T>> LazyTransform<T, S, FN> {
+    pub fn new(transform_fn: FN) -> LazyTransform<T, S, FN> {
+        LazyTransform {
+            transform_fn: transform_fn,
+            state: Mutex::new(LazyState { source: None,value: None}),
+        }
+    }
+    pub fn set_source(&self, source: S) {
+        let mut state = self.state.lock().unwrap();
+        state.source = Some(source);
+    }
+    pub fn get_transformed(&mut self) -> Option<T> {
+        let mut state = self.state.lock().unwrap();
+        if let Some(source) = state.source.take() {
+            let newval = (self.transform_fn)(source);
+            if newval.is_some() {
+                state.value = newval;
+            }
+        }
+        state.value.clone()
+    }
+}
+```
+
+现在这两个方法都是在&self上操作，依靠mutex来获得对self.state中数据的写访问。就方法签名而言，这是API的最终版本--所有未来的版本只是在实现上有所不同。
+
+现在的存储分为transform_fn和state，前者本身是不可变的，可以从共享引用中调用；后者是对象状态的可变部分，被移到了一个单独的结构中，并被封装在一个Mutex中。从这里可以看出，Rust的Mutex是一个容器，它保存并拥有它所保护的数据。虽然这种耦合初看起来很奇怪，但它使mutex能够安全地授予对其拥有的数据的读写访问权。
+
+调用Mutex::lock()会等到获得一个专属的操作系统锁，然后返回一个 "guard "对象，这两个LazyTransform方法都会将其存储在一个名为state的本地变量中。在守卫退出范围之前，mutex不会被解锁。因此，一个活的守卫的存在代表了mutex被锁定的证明，因此提供了对底层数据的读写访问。
+
+在Rust对mutex语义的扭曲中，锁定一个mutex的行为的意义在于通过一个临时的guard对象获得对其数据的临时独占性写访问。尽管self是一个共享引用，但成功的self.state.lock()授予了对&mut LazyState的访问权，这个访问权可能会持续到mutex被锁定（guard存在）为止，而不再持续。这就是Rust通过静态分析防止数据竞赛的关键所在。
+
+除了奇怪的mutex设计之外，代码本身并没有什么真正有趣的地方。一旦mutex被锁定，两个函数做的事情和它们的单线程对应的函数完全一样。虽然这段代码在Rust承诺的意义上是线程安全的，即没有数据竞赛，但在并行调用时，即使忽略严格的无锁要求，它的效率仍然相差甚远。特别是，get_transformed在重读的情况下效率极低，因为每个调用都会阻塞所有其他调用，即使set_source根本没有被调用。当一个转换正在进行时，其他所有的读取器都会被阻塞，直到它完成。
+
+
+
+原文： https://morestina.net/blog/742/exploring-lock-free-rust-1-locks
 
