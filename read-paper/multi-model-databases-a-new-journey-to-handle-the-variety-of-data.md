@@ -322,3 +322,41 @@ Tables IV, V and VI provide a closer look at the particular systems6. They overv
 
 ---
 
+
+
+In the third table we provide yes (√) / no (×) / unknown or unspecified (–) features informing:
+(5) whether the database is distributed,
+(6) whether the database requires schema definition for storing the data,
+(7) whether the diverse data can be queried together using a single common language,
+(8) whether there exists also a version for the cloud, and
+(9) whether a special transaction management was introduced to handle the diverse data.
+
+在第三张表中，我们提供了是（√）/否（×）/未知或未指明（-）的特征告知。
+(5)数据库是否分布。
+(6) 数据库是否需要定义存储数据的模式。
+(7)是否可以使用单一的通用语言对不同的数据进行查询。
+(8) 是否也有云的版本，以及
+(9) 是否引入了专门的交易管理来处理各种数据。
+
+---
+
+Characteristics (1) and (2) have already been described, while characteristics (4) are further analyzed and discussed later in this section. 
+
+Considering characteristics (3), as we can see, query languages involve various approaches, both declarative and imperative.
+
+The options range from simple API (DynamoDB), full-text search (Riak), to extensions of popular standard query languages, such as SQL (e.g., PostgreSQL, Cassandra, or OrientDB) or XQuery (MarkLogic).
+
+Naturally SQL-extensions and SQLlike languages form the main approach (we devote to this aspect a separate Table VII).
+
+特征(1)和(2)已经介绍过了，而特征(4)将在本节后面进一步分析和讨论。
+
+考虑到特征(3)，我们可以看到，查询语言涉及各种方法，包括声明式和命令式。
+
+选择范围从简单的API(DynamoDB)、全文检索(Riak)，到流行的标准查询语言的扩展，如SQL(如PostgreSQL、Cassandra或OrientDB)或XQuery(MarkLogic)。
+
+当然，SQL扩展和类似SQL的语言构成了主要的方法（我们在一个单独的表VII中专门讨论这个方面）。
+
+---
+
+
+
