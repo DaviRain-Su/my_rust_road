@@ -519,3 +519,479 @@ Sinew。DBMS Sinew[Tahara et al. 2014]是基于在传统的关系型DBMS之上�
 
 ---
 
+Physically the data is stored in an underlying relational DBMS. Depending on the query workload a subset of the columns of the logical table is materialized, others are serialized in a single binary column. The storage schema is periodically adapted to the evolving workload.
+
+物理上，数据存储在底层的关系型数据库管理系统中。根据查询工作负载，逻辑表列的一个子集被具体化，其他列则被序列化在一个二进制列中。存储模式会根据不断变化的工作负载定期调整。
+
+---
+
+4.2. Column Stores
+Another large group of multi-model databases is represented by NoSQL column stores. Note that the term “column store” can be understood in two ways. (1) A columnoriented store is a DBMS (not necessarily NoSQL) that does not store data tables as rows, but as columns. These systems are usually used in analytics tools. An example is, e.g., HPE Vertica. (2) Column-family (or wide-column) stores represent a type of NoSQL databases which support tables having distinct numbers and types of columns, like, e.g., Cassandra. The underlying storage strategy can be arbitrary, including column-oriented, so these two groups can overlap. This section is devoted primarily to the second group of databases – column-family stores.
+
+4.2. 栏式仓库
+另一大类多模型数据库的代表是NoSQL列存储。需要注意的是，"列式存储 "一词可以从两个方面来理解。(1)面向列的存储是指不存储数据表的DBMS(不一定是NoSQL) 作为行，但作为列。这些系统通常用于分析工具中。例如，HPE Vertica就是一个例子。(2)列家族(或宽列)存储代表了一个 的NoSQL数据库类型，它支持具有不同数量和类型的表。的列，比如，Cassandra。底层存储策略可以是任意的。包括面向栏目，所以这两组可以重叠。本节专门介绍 主要是针对第二类数据库--列家族存储。
+
+---
+
+Cassandra. Apache Cassandra18 (first released in 2008) is an open source NoSQL column-family store. DataStax Enterprise19, a database for cloud applications, results from Cassandra. Using SQL-like Cassandra Query Language (CQL) it enables to store the data in sparse tables. Apart from scalar data types (like text or int), it supports three types of collections (list, set and map), tuples, and user defined data types (which can consist of any data types), together with respective operations for storing and retrieval of the data.
+
+Cassandra。Apache Cassandra18（2008年首次发布）是一款开源的NoSQL 列-家族存储。云应用的数据库DataStax Enterprise19，结果是 的Cassandra。使用类似SQL的Cassandra查询语言(CQL)，它能够存储 稀疏表中的数据。除了标量数据类型（如text或int），它还支持 三种类型的集合(list、set和map)、元组和用户定义的数据类型(这三种类型是 可以由任何数据类型组成），以及存储和检索数据的相应操作。
+
+---
+
+Internally the data are stored in SSTables (Sorted String Tables) originally proposed in Google system Bigtable [Chang et al. 2008]. An SSTable is “an ordered immutable map from keys to values, where both keys and values are arbitrary byte strings”. It is further divided into blocks which are indexed to speed up data look up. Since SSTables are immutable, modified data are stored to a new SSTable and periodically merged using compaction.
+
+在内部，数据被存储在SSTables（排序字符串表）中，最初是在Google系统Bigtable中提出的[Chang等人，2008]。一个SSTable是 "一个从键到值的有序的不可变的映射，其中键和值都是任意的字节字符串"。它又被分为若干块，这些块都有索引，以加快数据查找的速度。由于SSTable是不可变的，所以修改后的数据会存储到一个新的SSTable中，并定期使用压实进行合并。
+
+---
+
+Since 2015 Cassandra supports also the JSON format [DataStax, Inc. 2015]; however, the respective tables, i.e., the schema of the data, must be first specified. An example of storing both simple scalar and JSON data in Cassandra can be seen in Fig. 6.
+
+自2015年起，Cassandra也支持JSON格式[DataStax, Inc. 2015]；但是，必须先指定各自的表，即数据的模式。在Cassandra中同时存储简单标量数据和JSON数据的例子可以在图6中看到。
+
+---
+
+The Cassandra Query Language (CQL) [The Apache Software Foundation 2017] can be considered as a subset of SQL. It consists of clauses SELECT, FROM, WHERE, GROUP BY, ORDER BY, and LIMIT. However, only a single table can be queried in FROM clause and there are certain limitations for conditions in WHERE clause, such as restrictions only to the primary key or columns with a secondary index etc. Sorting is supported only according to the columns which determine how data are sorted and stored on disk. Clause SELECT JSON can be used to return each row as a single JSON encoded map; the mapping between JSON and Cassandra types is the same as in case of storing.
+
+Cassandra查询语言（CQL）[Apache软件基金会2017年]可 被认为是SQL的一个子集。它由子句SELECT、FROM、WHERE、GROUP BY组成。ORDER BY，和LIMIT。但是，在FROM子句中只能查询一个表，并且在FROM子句中只能查询一个表。WHERE子句中的条件有一定的限制，比如只限制于 到主键或带有二级索引的列等。仅支持排序 根据列决定数据如何排序和存储在磁盘上。子句SELECT JSON可以用来将每条记录作为单一的JSON编码映射返回。JSON和Cassandra类型之间的映射与存储的情况相同。
+
+---
+
+There are several types of indices in Cassandra. The primary key is always automatically indexed using an inverted index implemented using an auxiliary table. Secondary indices can be explicitly added for the columns according to which we want search data, including collections. The respective SSTable Attached Secondary Indices (SASI) are implemented using memory mapped B+ trees and thus allow also range queries. Indices are, however, not recommended for “high-cardinality columns, tables that use a counter column, a frequently updated or deleted column, and to look for a row in a large partition unless narrowly queried” [DataStax, Inc. 2013].
+
+Cassandra 中有几种类型的索引。主键总是使用一个使用辅助表实现的倒置索引自动建立索引。二级索引可以根据我们想要的列显式地增加 搜索数据，包括收藏。各自的SSTable附属二级指数。(SASI)使用内存映射的B+树来实现，因此也允许范围 查询。但是，对于 "高卡路里列、表格"，不推荐使用指数。使用计数器列、经常更新或删除的列，并寻找一个 "反 "字。大分区中的行，除非是狭义查询"[DataStax, Inc. 2013]。
+
+---
+
+CrateDB. CrateDB20 was released in 2016 after 3 years of development. It is a distributed column-oriented SQL database with a dynamic schema which can store also nested JSON documents, arrays, and BLOBs. It is built upon several existing open source technologies, such as Elasticsearch21 or Lucene22. CrateDB can be deployed to any operating system capable of running Java and thus also various cloud platforms.
+
+CrateDB。CrateDB20经过3年的开发，于2016年发布。它是一个分布式的面向列的SQL数据库，具有动态模式，也可以存储嵌套的JSON文档、数组和BLOB。它是建立在一些现有的开源技术上，如Elasticsearch21或Lucene22。CrateDB可以部署到任何能够运行Java的操作系统上，因此也可以部署到各种云平台上。
+
+---
+
+Each row of a table in CrateDB is a semi-structured document. [Crate.io 2017] Every table in CrateDB is sharded across the nodes of a cluster, whereas each shard is a Lucene index. Operations on documents are atomic.
+
+CrateDB中表的每一行都是一个半结构化的文档。Crate.io 2017] CrateDB中的每个表都是在集群的节点上分片的，而每个分片就是一个Lucene索引。对文档的操作是原子式的。
+
+---
+
+Data in CrateDB can be accessed via a standard ANSI SQL 92. Nested JSON attributes can be included in any SQL command. For this purpose, CrateDB added an SQL layer to a Lucene index-based data store using Elasticsearch interface to access the underlying Lucene indices.
+
+CrateDB中的数据可以通过一个标准的ANSI SQL 92来访问。嵌套的JSON属性可以包含在任何SQL命令中。为此，CrateDB在基于Lucene索引的数据存储中添加了一个SQL层，使用Elasticsearch接口来访问底层的Lucene索引。
+
+---
+
+DynamoDB. Amazon DynamoDB23 was released in 2012 as a cloud database which supports both (JSON) documents and key/value flexible data models. In DynamoDB, a table is schemaless and it corresponds to a collection of items. An item is a collection of attributes and it is identified by a primary key. An attribute consists of a name, a data type, and a value. The data type can be a scalar value (string, number, Boolean etc.), a document (list or map), or a set of scalar values. The data items in a table do not have to have the same attributes. [Amazon 2017]
+
+DynamoDB。亚马逊DynamoDB23于2012年发布，作为云数据库，其 支持（JSON）文档和键/值灵活的数据模型。在DynamoDB中，一个 表是无模式的，它对应于一个项的集合。一个项目是一个由 属性，并由一个主键识别。一个属性由一个名称、一个数据和一个主键组成。类型和一个值。数据类型可以是一个标量值（字符串、数字、布尔值等）、一个 文档（列表或地图），或一组标量值。表中的数据项不具有 以具有相同的属性。[亚马逊2017年]
+
+---
+
+DynamoDB primarily supports a simple API for creating / updating / deleting / listing a table and putting / updating / getting / deleting an item. A bit more advanced feature enables to query over primary or secondary indices using comparison operators.
+
+DynamoDB主要支持一个简单的API，用于创建/更新/删除/列表表和放入/更新/获取/删除项目。更高级一点的功能是可以使用比较运算符对主索引或次索引进行查询。
+
+---
+
+Two types of primary keys are supported in DynamoDB: The partition key determines the partition where a particular data item is stored. The sort key determines the order in which the data items are stored within a partition. DynamoDB also supports two types of secondary indices global and local. A secondary index consists of a subset of attributes from a selected base table and a corresponding alternate key. Global secondary index can have the partition key different from the base table, local secondary index can not.
+
+在DynamoDB中支持两种类型的主键：分区键决定存储特定数据项的分区。排序键决定数据项在分区中存储的顺序。DynamoDB还支持全局和局部两种类型的二级索引。一个二级索引由以下几个部分组成 选定的基表的属性子集和相应的备用键。全局二级索引的分区键可以与基表不同，局部的二级指标不能。
+
+---
+
+HPE Vertica. HPE Vertica24 is a high-performance analytics engine which was designed to manage Big Data. Vertica offers two deployment modes for running in the clouds. The storage organization is column-oriented, whereas it supports standard SQL interface enriched by analytics capabilities. Since 2013 it was extended with flex tables [Hewlett Packard Enterprise 2018] which do not require schema definitions, enable to store also semi-structured data (e.g., JSON or CSV formats), and support SQL queries.
+
+HPE Vertica.HPE Vertica24是一个高性能的分析引擎，旨在管理大数据。HPE Vertica24是一个高性能的分析引擎，它是为管理大数据而设计的。Vertica提供了两种部署模式，可运行在 云。存储组织是面向列的，而它支持标准的 SQL界面丰富了分析功能。自2013年起，它被扩展为flex 表[Hewlett Packard Enterprise 2018]，它不需要模式定义，能够也存储半结构化数据（如JSON或CSV格式），并支持SQL 查询。
+
+---
+
+Creating flex tables is similar to creating classical tables, except column definitions are optional (if present, the table is denoted as hybrid). Vertica implicitly adds a NOT NULL column raw which stores the loaded semi-structured data. For a flex table without other column definitions, it also adds auto-incrementing column identity used for segmentation and sort order. The loaded data are stored in an internal map data format VMap, i.e., a set of key/value pairs, called virtual columns. Selected keys can be then materialized by promoting virtual columns to real table columns.
+
+创建flex表与创建经典表类似，但列定义不同。是可选的（如果存在，表就表示为混合表）。Vertica 隐式地添加了一个 NOT NULL列raw，存储加载的半结构化数据。对于一个flex表 在没有其他列定义的情况下，它还增加了自动递增的列标识。用于分割和排序。装入的数据存储在一个内部地图中 数据格式VMap，即一组键/值对，称为虚拟列。选定的键 然后可以通过将虚拟列推广到真实表列来实现。
+
+---
+
+Besides the flex table itself, Vertica creates also associated keys table (with selfdescriptive columns key name, frequency, and data type guess) and a default view for the main flex table. The records under the key name column of the table are used as view columns, along with any values for the key. If no values exist, the column value is NULL. Both the keys table and the default view enable to explore the data to determine its contents since the schema of the stored data is not required.
+
+除了flex表本身，Vertica还为主flex表创建了关联键表（带有自述列键名、频率和数据类型猜测）和默认视图。表的键名列下的记录以及键的任何值都被用作视图列，如果没有值，列值为NULL。如果没有值存在，则列值为NULL。由于不需要存储数据的模式，因此键表和默认视图都可以探索数据以确定其内容。
+
+---
+
+A flex table can be processed using SQL commands SELECT, COPY, TRUNCATE, and DELETE. Custom views can also be created. Both virtual and real columns can be queried using classical SELECT command. A SELECT query on a flex table or a flex table view invokes the maplookup() function to return information on virtual columns. Materializing virtual columns by promoting them to real columns improves query performance (at the cost of more space requirements). Promoting flex table columns results in a hybrid table so both raw and real data can still be queried together.
+
+可以使用SQL命令SELECT、COPY、TRUNCATE和DELETE来处理flex表。也可以创建自定义视图。可以使用经典的SELECT命令对虚拟列和实际列进行查询。在flex表或flex表视图上进行SELECT查询，调用maplookup()函数返回虚拟列的信息。通过将虚拟列推广为真实列来实现虚拟列的物质化，可以提高查询性能（代价是需要更多的空间）。推广flex表列的结果是一个混合表，因此原始数据和真实数据仍然可以一起查询。
+
+---
+
+4.3. Key/value Stores
+In general, key/value stores are considered as the least complex NoSQL DBMSs which support only a simple (but fast) API for storing and retrieving an item having a particular ID. These systems, however, usually provide more complex operations of the value part; hence, the convergence to multi-model systems is a relatively natural evolution step.
+
+4.3. 钥匙/价值仓库
+一般来说，键/值存储被认为是最不复杂的NoSQL DBMS，它只支持一个简单（但快速）的API，用于存储和检索具有特定ID的项目。然而，这些系统通常提供价值部分更复杂的操作；因此，向多模型系统的融合是一个相对自然的进化步骤。
+
+---
+
+Riak. Riak25 was first released in 2009 as a classical key/value DBMS. On top of it Riak CS provides a distributed cloud storage. Since 2014 two features – Riak Search and Riak Data Types – make it possible to use Riak also as a document store with querying capabilities [Basho Technologies, Inc. 2014]. Riak Data Types, based on a conflict-free replicated data type (CRDT), involve sets, maps (which enable embedding of any data type), counters etc. and can be indexed and searched through. Riak Search 2.0 is in fact an integration of Solr26 for indexing and querying and Riak for storage and distribution. Riak Search must first be configured with a Solr schema (eventually the default one) so that Solr knows how to index value fields. Indices, e.g., over particular fields of an XML or JSON document, are named Solr indices and must be associated with a bucket (i.e., a named set of key/value pairs) or a bucket type (i.e., a set of buckets). The fields to be indexed are extracted from the data using extractors. Riak currently supports JSON, XML, plain text, and Riak Data Types extractors, but it is possible to implement an own extractor as well.
+
+Riak.Riak25是2009年首次发布的经典密钥/值数据库管理系统。Riak25于2009年首次发布，是一个经典的键/值DBMS。在它之上，Riak CS提供了一个分布式云存储。自2014年起，Riak Search和Riak Data Types这两个功能使得Riak也可以作为一个具有查询功能的文档存储[Basho Technologies, Inc.2014]。Riak数据类型基于无冲突复制数据类型(CRDT)，涉及集合、地图(可以嵌入任何数据类型)、计数器等，可以进行索引和搜索。Riak Search 2.0实际上是Solr26的集成，用于索引和查询，Riak用于存储和分发。Riak Search必须首先配置一个Solr模式（最终是默认模式），以便Solr知道如何索引值字段。索引，例如，在XML或JSON文档的特定字段上的索引，被命名为Solr索引，并且必须是 与一个桶（即一组命名的键/值对）或一个桶类型（即一组桶）相关联。桶类型（即一组桶）。) 要索引的字段是使用提取器从数据中提取出来的。Riak目前支持JSON、XML、纯文本和Riak数据类型提取器，但 也可以实现自己的提取器。
+
+---
+
+As we have described before, using Solr, Riak enables to query over data that have been previously indexed. All distributed Solr queries are supported [Basho Technologies, Inc. 2017], including wild-cards, proximity search, range search, Boolean operators, grouping etc.
+
+正如我们之前所描述的那样，使用Solr，Riak可以查询具有以下特征的数据。 支持所有分布式Solr查询[Basho Technologies, Inc. 2017]，包括通配符、近似搜索、范围搜索、布尔运算符、分组等。
+
+---
+
+c-treeACE. FairCom c-treeACE27 is denoted by its vendor as a No+SQL DBMS [Brown 2016], offering both NoSQL and SQL in a single database. c-treeACE supports both relational and non-relational APIs. It is based on an Indexed Sequential Access Method (ISAM) structure supporting operations with records, their sets, or files in which they are stored. The original version supported only the ISAM API; the SQL API was added in 2003.
+
+c-treeACE。FairCom c-treeACE27被其供应商表示为No+SQL DBMS[Brown 2016]，在一个数据库中同时提供NoSQL和SQL。c-treeACE支持关系型和非关系型API。它基于索引顺序访问方法（ISAM）结构，支持对记录、它们的集合或它们所存储的文件进行操作。最初的版本只支持ISAM API；2003年增加了SQL API。
+
+---
+
+Oracle NoSQL Database. Oracle NoSQL Database28, first released in 2011, is a scalable, distributed NoSQL database built upon the Oracle Berkeley DB29. It can be also run as a fully managed cloud service using the Oracle Cloud. Contrary to Oracle MySQL, Oracle NoSQL Database is a key/value DBMS which (since release 3.0 in 2014) supports a table API, i.e., SQL. In addition, RDF support was added thanks to the Oracle Graph module. First, a definition of the tables must be provided, which includes table and attribute names, data types (involving scalar types, arrays, maps, records, and child tables corresponding to nested subtables), primary (and eventually shard) key, indices etc. (When using child tables, by default, child tables are not retrieved when retrieving a parent table, nor is the parent retrieved when a child table is retrieved.) An example of storing both relational and JSON data in Oracle NoSQL Database can be seen in Fig. 7; the structure of the resulting table can be seen in Fig. 8. An example of querying both relational and JSON data is provided in Fig. 9.
+
+甲骨文NoSQL数据库。Oracle NoSQL数据库28于2011年首次发布，是建立在Oracle Berkeley DB29基础上的可扩展、分布式NoSQL数据库。它可以 也可以使用Oracle Cloud作为完全托管的云服务运行。与甲骨文MySQL相反，甲骨文NoSQL数据库是一个键/值DBMS，它（自2014年发布3.0版以来 2014年）支持表API，即SQL。此外，由于增加了RDF支持 到Oracle Graph模块。首先，必须提供表的定义，其中包括 包括表和属性名、数据类型（涉及标量类型、数组、映射。记录，以及与嵌套子表相对应的子表）、主表（以及最终的 shard）键、索引等（使用子表时，默认情况下，检索父表时不检索子表，检索子表时也不检索父表。被检索）。) 在Oracle NoSQL中同时存储关系型数据和JSON数据的一个例子。数据库可以在图7中看到；结果表的结构可以在图8中看到。图9中提供了一个同时查询关系型数据和JSON数据的例子。
+
+---
+
+Oracle NoSQL Database secondary indices are implemented using distributed, shard-local B-trees [Oracle 2014]. The DBMS supports secondary indexing over simple, scalar as well as over non-scalar and nested data values.
+
+Oracle NoSQL数据库二级索引是使用分布式、shard-local B-trees实现的[Oracle 2014]。DBMS支持对简单、标量以及非标量和嵌套数据值进行二级索引。
+
+---
+
+4.4. Document Stores
+Document DBMSs can be considered as advanced key/value stores with complex value part that can be queried. Hence, each document store can be considered as a kind of multi-model DBMS since it naturally supports also storing of key/value or column data.
+
+4.4. 文件仓库
+文档DBMS可以被认为是高级的键/值存储，具有可查询的复杂值部分。因此，每个文档存储可以被视为一种多模型DBMS，因为它自然也支持键/值或列数据的存储。
+
+---
+
+ArangoDB. Contrary to most of the other DBMSs, ArangoDB was from the beginning created as a native multi-model system. Its first release is from 2011. It can be also run as a cloud-hosted database service. It supports key/value, document, and graph data. For the purpose of querying across all the data models it provides a common language [ArangoDB 2017]. ArangoDB however primarily serves documents to clients. Documents are represented in the JSON format and grouped in collections. A document contains a collection of attributes, each having a value of an atomic type or a compound type (an array or an embedded document/object).
+
+ArangoDB。与其他大多数DBMS相反，ArangoDB从一开始就是作为一个原生的多模型系统创建的。它的第一个版本是2011年发布的。它可以 也可以作为云端托管的数据库服务运行。它支持键/值、文档和 图数据。为了在所有数据模型之间进行查询，它提供了一种通用语言[ArangoDB 2017]。然而ArangoDB主要是为文档服务的，以 客户端。文档以JSON格式表示，并以集合形式分组。A 文档包含一个属性集合，每个属性都有一个原子类型的值或 一个复合类型（一个数组或一个嵌入式文档/对象）。
+
+---
+
+A document collection always has a primary key attribute key and in the absence of further secondary indices the document collection behaves like a simple key/value store. Special edge collections store documents as well, but they include two special attributes, from and to, which enable to create relations between documents. Hence two documents (vertices) stored in document collections are linked by a document (edge) stored in an edge collection. This is ArangoDB’s graph data model.
+
+一个文档集合总是有一个主键属性键，在没有其他二级索引的情况下，文档集合的行为就像一个简单的键/值存储。特殊的边缘集合也存储文档，但它们包括两个特殊的属性，from和to，这使得文档之间能够建立关系。因此，存储在文档集合中的两个文档（顶点）被存储在边缘集合中的一个文档（边缘）连接起来。这是ArangoDB的图数据模型。
+
+---
+
+ArangoDB query language (AQL) allows complex queries. Despite the different data models, it is similar to SQL. In case of the key/value store the only operations that are possible are single key lookups and key/value pair insertions and updates. In case of the document store queries can range from a simple “query by example” to complex “joins” using many collections, usage of functions (including user-defined ones) etc. For the purpose of graph data various types of traversing graph structures and shortest path searches are available. The most notable difference is probably the concept of loops borrowed from programming languages.
+
+ArangoDB查询语言（AQL）允许复杂的查询。尽管数据模型不同，但它与SQL类似。在键/值存储的情况下，唯一可能的操作是单键查询和键/值对的插入和更新。对于文档存储，查询的范围可以从简单的 "举例查询 "到使用许多集合、使用函数（包括用户定义的函数）等复杂的 "连接"。对于图数据来说，各种类型的遍历图结构和最短的遍历图结构。路径搜索。最显著的区别可能是以下概念 从编程语言中借来的循环。
+
+---
+
+ArangoDB involves several types of indices. Some of them are created automatically, others which can be created on collection level are user-defined. For each collection there is a primary index which is a hash index for the document keys (attribute key) of all documents in the collection. Every edge collection also has an automatically created edge index which provides quick access to documents by either their attributes from or to. It is also implemented as a hash index which stores a union of all the attributes. A user-defined index is also hash, in particular unsorted, so it supports equality lookups but no range queries or sorting. Optionally it can be declared as unique or sparse.
+
+ArangoDB涉及几种类型的索引。其中一些是自动创建的。其他可以在集合级别创建的集合由用户定义。对于每个集合 有一个主索引，它是文档键（属性键）的哈希索引。中的所有文档。每个边缘集合也有一个自动创建的 边缘索引，可通过文件的属性从或从文件的边缘索引中快速访问文件。到。它也被实现为一个哈希索引，它存储了所有属性的联合。A 用户定义的索引也是哈希的，特别是未排序的，所以它支持等价查询。但没有范围查询或排序。也可以选择声明为唯一或稀疏。
+
+---
+
+Another type of index is called a skiplist. It is a sorted index structure used for lookups, range queries and sorting. Optionally it can also be declared as unique or sparse. Other types of indices, such as persistent, full-text or geo, are available too.
+
+另一种类型的索引称为skiplist。它是一种排序的索引结构，用于查找、范围查询和排序。也可以选择将其声明为唯一或稀疏。其他类型的索引，如持久性的、全文的或地理的，也可以使用。
+
+---
+
+Couchbase. Another document DBMS with a support for multiple data models is Couchbase30, originally known as Membase, first released in 2010 and it can be easily deployed in the cloud. It is both key/value and document DBMS with an SQL-based query language. Documents (in JSON) are stored in data containers called buckets without any pre-defined schema. The storage approach is based on an append-only write model for each file for efficient writes which also requires regular compaction for cleanup. A special type of memcached buckets support caching of frequently-used data. Hence they reduce the number of queries a database server must perform. The server provides only in-RAM storage and data does not persist on disk. If it runs out of space in the buckets RAM quota, it uses the Least Recently Used (LRU) algorithm to evict items from the RAM.
+
+Couchbase。另一个支持多种数据模型的文档DBMS是 Couchbase30，原名Membase，最早发布于2010年，它可以很容易地 部署在云端。它既是键/值又是文档DBMS，具有基于SQL的功能。查询语言。文档（JSON格式）存储在称为桶的数据容器中。没有任何预定义的模式。存储方法是基于一个仅有附加的 为每个文件建立写入模型，以实现高效的写入，这也需要定期对文件进行压缩，以实现 清理。一种特殊类型的memcached buckets支持经常使用的数据的缓存。因此，它们减少了数据库服务器必须执行的查询次数。服务器 只提供内存中的存储，数据不在磁盘上保存。如果它的空间用完了 的RAM配额中，它使用最近使用的最少的算法（LRU）来清除 从RAM中取出项目。
+
+---
+
+The SQL-based query language of Couchbase, denoted as N1QL, enables to access the JSON data. In addition, key/value API, MapReduce API, and spatial API for geographical data is provided. N1QL involves classical clauses such as SELECT, FROM (targeting multiple buckets), WHERE, GROUP BY, and ORDER BY.
+
+Couchbase的基于SQL的查询语言，表示为N1QL，可以访问JSON数据，此外，还提供了key/value API、MapReduce API和地理数据的空间API。此外，还提供了地理数据的key/value API、MapReduce API和空间API。N1QL涉及经典子句，如SELECT、FROM（针对多个桶）、WHERE、GROUP BY和ORDER BY。
+
+---
+
+Two types of indices are supported in Couchbase – B+tree indices similar to those used in relational databases and B+trie (a hierarchical B+-tree based trie). B+trie provides a more efficient tree structure compared to B+trees and ensures a shallower tree hierarchy.
+
+Couchbase中支持两种类型的索引--类似于关系型数据库中使用的B+树索引和B+trie（一种基于B+树的层次结构的Trie）。与B+树相比，B+trie提供了更有效的树结构，并保证了较浅的树层结构。
+
+---
+
+Two types of indices are supported in Couchbase – B+tree indices similar to those used in relational databases and B+trie (a hierarchical B+-tree based trie). B+trie provides a more efficient tree structure compared to B+trees and ensures a shallower tree hierarchy.
+
+Couchbase中支持两种类型的索引--类似于关系型数据库中使用的B+树索引和B+trie（一种基于B+树的层次结构的Trie）。与B+树相比，B+trie提供了更有效的树结构，并保证了较浅的树层结构。
+
+---
+
+MongoDB. Probably the most popular document DBMS MongoDB31 (whose development began in 2007) has been declared as multi-model at the end of 2016. Its document model, that can naturally store also simple key/value pairs and table-like structures, has been extended towards graph data. In addition, MongoDB Atlas is a cloud-hosted database service.
+
+MongoDB。可能是最流行的文档DBMS MongoDB31（其开发始于2007年）已于2016年底被宣布为多模型。它的文档模型，自然也可以存储简单的键/值对和类表结构，已经向图数据扩展。此外，MongoDB Atlas是一个云端托管的数据库服务。
+
+---
+
+In general, documents in MongoDB (expressed in JSON) have a flexible schema and hence the respective collections do not enforce document structure (except for field id uniquely identifying each document). The user can decide whether to embed the data or to use references to other documents (which enable to form a graph). Operations are
+atomic at the document level.
+
+一般来说，MongoDB中的文档（用JSON表示）有一个灵活的模式，因此各集合并不强制执行文档结构（除了字段id唯一标识每个文档）。用户可以决定是嵌入数据还是使用对其他文档的引用（可以形成一个图表）。操作是在文档层的原子。
+
+---
+
+MongoDB query language uses a JSON syntax. It supports both selection of documents using conditions (involving logical operators, comparison operators, field existence, regular expressions, bitwise operators etc.), projections of selected fields of the result, accessing of document fields in an arbitrary depth etc. MongoDB does not support joins. There are two methods for relating documents: (1) Manual references where one document contains field id of another document and thus a second query must be always used to access the referenced data. (2) DBRefs references, where a document is referenced using field id, collection name, and (optionally) database name, i.e. different document collections can be mutually linked. Also in this case a second query must be used to access the data, but there are drivers involving helper methods that form the query for the DBRefs automatically.
+
+MongoDB查询语言采用JSON语法。它既支持使用条件（涉及逻辑运算符、比较运算符、字段存在、正则表达式、位元运算符等）选择文档，也支持对所选字段的投影 结果，访问任意深度的文档字段等。MongoDB不支持连接。关联文档的方法有两种。(1)手动引用，其中 一个文档包含了另一个文档的字段id，因此必须进行第二个查询。始终用于访问被引用的数据。(2)DBRefs引用，其中文档的 是用字段id、集合名和（可选）数据库名来引用的，也就是说，不同的文档集合可以相互链接。同样在这种情况下，第二个查询 必须用于访问数据，但有一些驱动程序涉及到帮助方法，这些方法是 自动形成DBRefs的查询。
+
+---
+
+Documents are physically stored in BSON32 – a binary representation of JSON documents. The maximum BSON document size is 16MB. MongoDB automatically creates a unique primary index on field id. It also supports a number of secondary indices, such as single-field, compound (to index multiple fields), multikey (to index the content stored in arrays), geospatial, text, or hashed. Most types of MongoDB indices are based on a B-tree data structure [MongoDB, Inc. 2017].
+
+文档实际存储在BSON32中--JSON文档的二进制表示。BSON文档的最大大小为16MB。MongoDB会在字段id上自动创建一个唯一的主索引。它还支持一些二级索引，如单字段、复合索引（对多个字段进行索引）、多键索引（对数组中存储的内容进行索引）、地理空间索引、文本索引或哈希索引。大多数类型的MongoDB索引都是基于B-tree数据结构[MongoDB，Inc.2017]。
+
+---
+
+Cosmos DB. Azure Cosmos DB33 (before May 2017 called DocumentDB) from Microsoft is a cloud, schema-less, originally document database which supports ACID compliant transactions. It is multi-model and it supports document (JSON), key/value, graph, and columnar data models. For a new instance of Cosmos DB, the user chooses one of the data models and respective APIs to be used.
+
+Cosmos DB。微软的Azure Cosmos DB33（2017年5月之前叫DocumentDB）是一个云端的、无模式的、原本是文档的数据库，支持符合ACID的事务。它是多模型的，它支持文档（JSON）、键/值、图和列式数据模型。对于一个新的大同数据库实例，用户选择一个数据模型和各自的API来使用。
+
+---
+
+For accessing document, columnar, or key/value data Cosmos DB uses an SQL-like query language [Microsoft 2017a]. Every query consists of clause SELECT and optional clauses FROM, WHERE and ORDER BY. Clause FROM can involve inner joins whereas we join fields in JSON documents accessible via dot notation and positions of items in the arrays. Clause WHERE can involve arithmetic, logical, comparison, bitwise and string operators. For working with graph data the standard Gremlin [Rodriguez 2015] API is supported.
+
+对于访问文档、列式或键/值数据，大同数据库使用了一个类似于SQL的方法来实现。查询语言[Microsoft 2017a]。每个查询都由子句SELECT和可选的 子句FROM、WHERE和ORDER BY。子句FROM可以涉及到内部连接，而我们 在JSON文档中，通过点符号和项目的位置来连接字段。数组。子句WHERE可以涉及到算术、逻辑、比较、位和字符串。操作符。对于图形数据的处理，标准的Gremlin[Rodriguez 2015]API是 支持：
+
+---
+
+By default, Cosmos DB automatically indexes all documents in the database and it does not require any schema or creation of secondary indices. These defaults can be modified by setting an indexing policy specifying including/excluding documents and paths (selecting document fields) to/from index, configuring index types (hash/range/spatial for numbers/strings/points/polygons/linestrings and their required precision), and configuring index update modes (consistent/lazy/none). The indexing strategy in Cosmos DB [Shukla et al. 2015] is based on two strategies: (1) a map of tuples (document id, path) and (2) a map of tuples (path, document id). Particular path patterns can be excluded from the index.
+
+默认情况下，大同数据库会自动为数据库中的所有文档建立索引，它不需要任何模式或创建二级索引。这些默认值可以通过设置一个索引策略来修改，指定包括/排除文档和路径（选择文档字段）到/从索引，配置索引类型。(数字/字符串/点/多角形/线串的哈希/范围/空间及其所需精度)，以及配置索引更新模式(一致/懒惰/无)。Cosmos DB中的索引策略[Shukla等人，2015]基于两种策略。(1)元组的映射(文档id，路径)；(2)元组的映射(路径，文档id)。特定的路径模式可以从索引中排除。
+
+---
+
+4.4.1. XML Stores. XML stores can be considered as a special type of document databases. However, XML stores do not belong to the group of core NoSQL databases, so they are usually not intended for Big Data and respective distributed processing.
+
+4.4.1. XML存储。XML存储可以被认为是一种特殊类型的文档数据库，但XML存储并不属于NoSQL数据库的核心组别，所以通常不用于大数据和各自的分布式处理。但是，XML存储不属于核心NoSQL数据库的范畴，所以通常不用于大数据和各自的分布式处理。
+
+---
+
+MarkLogic. The development of MarkLogic34 began in 2001 as a native XML database, i.e., a system natively supporting hierarchical semi-structured XML data. Since 2008 it supports also the JSON format [MarkLogic Corporation 2017a] and currently also other data formats, like, e.g., RDF, binary, or textual. It can be deployed, managed and monitored in various cloud platforms.
+
+4.4.1. XML存储。XML存储可以被认为是一种特殊类型的文档数据库，但XML存储并不属于NoSQL数据库的核心组别，所以通常不用于大数据和各自的分布式处理。但是，XML存储不属于核心NoSQL数据库的范畴，所以通常不用于大数据和各自的分布式处理。
+
+---
+
+As can be seen in Fig. 10, MarkLogic models a JSON document like an XML document, i.e., as a tree of nodes, rooted at an auxiliary document node. The nodes represent objects, arrays, text, number, Boolean, or null values. The name of a node corresponds to the property name if specified, otherwise unnamed nodes are supported. This similarity provides a unified way to manage and index documents of both types. MarkLogic indexes the structure of the data upon loading regardless their eventual schema. An example of storing both XML and JSON data in MarkLogic can be seen in Fig. 11.
+
+从图10中可以看出，MarkLogic将JSON文档像XML文档一样建模，即以辅助文档节点为根的节点树。节点代表对象、数组、文本、数字、布尔或空值。如果指定了属性名，则节点的名称对应于属性名，否则支持未命名的节点。这种相似性为两种类型的文档提供了统一的管理和索引方式。MarkLogic在加载数据时就对数据的结构进行索引，而不考虑它们的最终结果。模式。在MarkLogic中存储XML和JSON数据的一个例子可以在下面看到 图11.
+
+---
+
+Thanks to the tree representation, the JSON documents can be traversed using XPath queries which can be called also from the JavaScript and XQuery code. For querying using SQL MarkLogic enables to create a view which flattens the JSON/XML hierarchical data into tables. An example of querying both XML and JSON data using XQuery can be seen in Fig. 12.
+
+由于采用了树形表示法，JSON文档可以使用XPath查询来遍历，这些查询也可以从JavaScript和XQuery代码中调用。对于使用SQL的查询，MarkLogic能够创建一个视图，该视图将JSON/XML分层数据扁平化为表格。使用XQuery查询XML和JSON数据的例子可以在图12中看到。
+
+---
+
+Actually, MarkLogic stores, retrieves and indexes document fragments. By default a fragment is the whole document. But, MarkLogic also enables users to break large XML documents into document fragments. JSON documents are single-fragment; the maximum size of a JSON document is 512 MB for 64-bit machines.
+
+由于采用了树形表示法，JSON文档可以使用XPath查询来遍历，这些查询也可以从JavaScript和XQuery代码中调用。对于使用SQL的查询，MarkLogic能够创建一个视图，该视图将JSON/XML分层数据扁平化为表格。使用XQuery查询XML和JSON数据的例子可以在图12中看到。
+
+---
+
+MarkLogic maintains a default universal index [MarkLogic Corporation 2017b] to search the text, structure, and their combinations for XML and JSON data. It includes an inverted index for each word (or phrase), XML element and JSON property and their values (further optimized using hashing) and an index of parent-child relationships. Range indices for efficient evaluation of range queries can be further specified. A range index can be described as two data structures: (1) an array of pairs (document id, value) sorted by document ids and (2) an array of pairs (value, document id) sorted by values (whereas both are further optimized so that the values are stored only once). A path range index further enables to index JSON properties defined by an XPath expression. Last but not least, MarkLogic enables one to create lexicons, i.e., lists of unique words/values that enable identification of a word/value in the database and the number of its appearances. There are several types of lexicons, such as word, value, value co-occurrence, range etc.
+
+MarkLogic公司维护了一个默认的通用索引[MarkLogic公司2017b]，用于 搜索XML和JSON数据的文本、结构及其组合。它包括 每个单词（或短语）、XML元素和JSON属性的倒序索引，以及 它们的值（使用散列法进一步优化）和一个父子关系的索引。还可以进一步指定范围索引，以便对范围查询进行有效评估。一个范围索引可以描述为两个数据结构。(1)一个对的数组(document id, value)按文档id排序，以及(2)对(value, document id)的数组，按 的值（而这两种索引都被进一步优化，使值只被存储一次）。路径范围索引进一步实现了对由XPath 的表达式。最后但并非最不重要的一点是，MarkLogic使人们能够创建词典，即由 独特的词/值，使人们能够识别数据库中的词/值，并能识别该词/值。其出现的次数。词典有几种类型，如词、值。共现值，范围等。
+
+---
+
+4.5. Graph Stores
+NoSQL graph databases enable to store the most complex data structures and involve a specific data access. Adding another type of data model thus increases the complexity of the problem. This is probably the reason why there seems to exist only a single representative of a graph multi-model database.
+
+4.5. 图库
+NoSQL图数据库能够存储最复杂的数据结构，并涉及特定的数据访问。因此，增加另一种类型的数据模型增加了复杂性。
+的问题。这可能是为什么似乎只存在一个图多模型数据库的单一代表的原因。
+
+---
+
+OrientDB. The first release of OrientDB35 from 2010 was implemented on the basis of an object DBMS. Currently it is an open source NoSQL DBMS supporting graph, key/value, document, and object models. It can be deployed and managed in most cloud environments.
+
+OrientDB。2010年发布的第一个版本OrientDB35是在对象DBMS的基础上实现的，目前它是一个开源的NoSQL DBMS，支持图、键/值、文档和对象模型。目前它是一个开源的NoSQL DBMS，支持图、键/值、文档和对象模型。它可以在大多数云环境中部署和管理。
+
+---
+
+An element of storage [OrientDB 2017a] is a record having a unique ID and corresponding to a document (formed by a set of key/value pairs), a BLOB, a vertex, or an edge. Classes contain and define records; however, they can be schema-full, schemaless, or schema-mixed. Classes can inherit (all properties) from other classes. If class properties are defined, they can be further constrained or indexed.
+
+存储元素[OrientDB 2017a]是一个具有唯一ID的记录，并对应于一个文档（由一组键/值对形成）、一个BLOB、一个顶点或一个边缘。类包含并定义记录；但是，它们可以是全模式、无模式或模式混合的。类可以从其他类继承（所有属性）。如果定义了类的属性，它们可以被进一步约束或索引。
+
+---
+
+Classes can have relationships of two types: (1) Referenced relationships are stored as physical links managed by storing the target record ID in the source record(s), similarly to storing pointers between two objects in memory. Four kinds of relationships are supported – LINK pointing to a single record and LINKSET, LINKLIST, or LINKMAP pointing to several records. (2) Embedded relationships are stronger and stored within the record that embeds. Embedded records do not have their own record, they are only accessible through the container record and cannot exist without it. Similarly to links, four kinds of embedded links are supported: EMBEDDED, EMBEDDEDSET, EMBEDDEDLIST, and EMBEDDEDMAP. An example of storing both graph and JSON data in OrientDB together with a graphical visualization of the result can be seen in Fig. 13.
+
+类可以有两种类型的关系。(1)引用关系是存储 作为物理链接，通过在源记录中存储目标记录ID来管理，类似于在内存中存储两个对象之间的指针。四种关系 是支持的--LINK指向一条记录，LINKSET、LINKLIST或LINKMAP指向多条记录。(2) 嵌入关系更强，存储在 嵌入的记录。嵌入的记录没有自己的记录，它们只有 通过容器记录访问，没有容器记录就不能存在。与链接类似。支持四种嵌入式链接。EMBEDDED, EMBEDDEDSET, EMBEDDEDLIST, 和EMBEDDEDMAP。图13是一个在OrientDB中同时存储图形和JSON数据以及图形可视化结果的例子。
+
+---
+
+OrientDB supports querying the data with graph-traversal language Gremlin or SQL extended for graph traversal [OrientDB 2017b]. The main difference in SQL commands is in class relationships represented by links. Classical joins are not supported and the links are simply navigated using dot notation. Otherwise the main SQL clauses as well as nested queries are supported.
+
+OrientDB支持用图遍历语言Gremlin或针对图遍历的SQL扩展来查询数据[OrientDB 2017b]。SQL命令的主要区别在于用链接表示的类关系。不支持经典的连接，只需用点符号来导航链接。否则，主要的SQL子句以及嵌套查询都支持。
+
+---
+
+OrientDB uses several indexing mechanisms. SB-tree [O’Neil 1992] is based on classical B-tree optimized for data insertions and range queries. It has variants (dis)allowing duplicities and for full text indexing. Significantly faster extendible hashing has the same variants but does not support range queries. Lucene full text and spatial indexing plugins are also available.
+
+OrientDB使用了几种索引机制。SB-树[O'Neil 1992]是基于经典的B-树，针对数据插入和范围查询进行了优化。它有允许重复性和全文索引的变体。显著更快的可扩展哈希具有相同的变体，但不支持范围查询。Lucene 全文和空间索引插件也是可用的。
+
+---
+
+4.6. Other Stores
+In this section we focus briefly on other types multi-model systems. We mention a representative of multi-model object stores and multi-use-case stores. And we also discuss systems which will probably soon become multi-model, as well as systems which are on the contrary no longer available.
+
+4.6. 其他商店
+在这一节中，我们简单地关注一下其他类型的多模型系统。我们提到了多模型对象存储和多用例存储的代表。我们还讨论了可能很快就会成为多模型的系统，以及相反的不再有的系统。
+
+---
+
+4.6.1. Object Stores. With their emergence, object stores were expected to become the key database technology, similarly to object-oriented programming. Even though relational databases have maintained their leadership, there exist highly successful object DBMSs used in specific areas. Since object model enables to store any kind of data, a multi-model extension is a relatively straightforward step.
+
+4.6.1. 对象商店。随着对象存储的出现，预计将成为关键的数据库技术，类似于面向对象编程。尽管关系型数据库一直保持着领导地位，但在特定的领域也存在着非常成功的对象数据库管理系统。由于对象模型可以存储任何种类的数据，所以多模型扩展是一个相对简单的步骤。
+
+---
+
+InterSystems Cach´e. DBMS Cache´ 36 from InterSystems was first launched in 1997 and recently transformed to the IRIS Data Platform37. It is an object database38 which stores data in sparse, multidimensional arrays capable of carrying hierarchically structured data. The data can be accessed using several APIs – via objects based upon the ODMG standard (involving inheritance and polymorphism, embedded objects, collections etc.), SQL (including DDL, transactions, referential integrity, triggers, stored procedures etc. with various object enhancements), or direct (and highest-performance) manipulation of its multidimensional data structures. Hence, both schemaless and schema-based storage strategy is available. In addition, since 2016 it supports also documents in JSON or XML [InterSystems 2016].
+
+InterSystems Cach´e. DBMS Cache´e InterSystems公司的36号机于1997年首次推出。并于最近转变为IRIS数据平台37。它是一个对象数据库38。它将数据存储在能够承载分层结构数据的稀疏的多维数组中。这些数据可以通过几个API进行访问--通过对象 基于ODMG标准（涉及继承和多态、嵌入式对象、集合等）、SQL（包括DDL、事务、引用完整性。触发器、存储过程等各种对象增强功能），或直接（和 最高性能）对其多维数据结构的操作。因此： 无模式和基于模式的存储策略都可以使用。此外，由于 2016年它还支持JSON或XML格式的文档[InterSystems 2016]。
+
+---
+
+with object features [InterSystems 2017], e.g. following object references using the operator -> instead of joins. In general, each instance of a persistent class has a “flattened” representation as a row in a table accessible via SQL.
+
+与对象特性[InterSystems 2017]，例如使用操作符->代替连接来跟踪对象引用。一般来说，每个持久化类的实例都有一个 "扁平化 "的表示，作为通过SQL访问的表中的一行。
+
+---
+
+The key important index structure in DBMS Cache is a ´ bitmap index [InterSystems 2015] – a series of highly compressed bitstrings to represent the set of object IDs that correspond to a given indexed value. It is further extended with a bitslice index for a numeric data field when that field is used for an aggregate calculation SUM, COUNT, or AVG. It represents each numeric data value as a binary bit string and creates a bitmap for each digit in the binary value to record which rows have 1 for that binary digit. Finally, standard indices correspond to an array that associates the indexed values with the RowIds of the rows that contain the values.
+
+DBMS Cache中关键的重要索引结构是一个 "位图索引"[InterSystems 2015年]--一系列高度压缩的位串来表示对象ID的集合，这些对象ID 对应于一个给定的索引值。它还进一步扩展了一个位片索引，为一个 当该字段用于汇总计算SUM、COUNT时，数字数据字段。或AVG。它将每个数字数据值表示为一个二进制位串，并创建一个 二进制值中每个数字的位图，记录该二进制值中哪些行为1。数字。最后，标准索引对应于一个数组，该数组将索引值与包含这些值的行的RowIds关联起来。
+
+---
+
+4.6.2. Multi-Use-Case Stores. A related group of DBMSs can be denoted as multi-usecase. These systems do not aim at storing multiple data models and querying across them, but rather at systems suitable for various types of database applications. Hence the idea of one-size-fits-all is viewed from the viewpoint of use cases.
+
+4.6.2. 多用例存储。一组相关的DBMS可以被称为多用例。这些系统不以存储多种数据模型和跨模型查询为目的，而是以适合各种类型数据库应用的系统为目的。因此，从用例的角度来看 "一刀切 "的想法。
+
+---
+
+For example SAP HANA DB39 is an in-memory, column-oriented, relational DBMS. It exploits and combines the advantages of a row (OLTP) and columnar (OLAP) storage strategy together with in-memory processing in order to provide a highly efficient and universal data management tool.
+
+例如SAP HANA DB39是一种内存式、面向列式、关系型DBMS。它利用并结合了行式（OLTP）和列式（OLAP）存储策略以及内存处理的优势，以提供一个高效和通用的数据管理工具。
+
+---
+
+Another example is OctopusDB40 whose aim is to mimic OLTP, OLAP, streaming and other types of database systems. For this purpose it does not have any fixed hard coded (e.g., row or columnar) store, but it records all database operations to a sequential primary log by creating appropriate logical log records. It later creates arbitrary physical representations of the log (called storage views), depending on the workload.
+
+另一个例子是OctopusDB40，它的目的是模仿OLTP、OLAP、流媒体和其他类型的数据库系统。为此，它没有任何固定的硬编码（如行或列）存储，但它通过创建适当的逻辑日志记录，将所有的数据库操作记录到一个顺序的主日志中。之后，它根据工作负载的不同，创建任意的日志物理表示（称为存储视图）。
+
+---
+
+4.6.3. Not (Yet) Multi-Model. Currently there also exists a number of DBMSs which cannot be denoted as multi-model. However, their current architecture enables this extension or such an extension is currently under development. Another set of DBMSs mentioned in this section involves systems whose support for multiple data models is highly limited. But in this case we can also assume that it will probably be (soon) extended.
+
+4.6.3. (尚未)多模型。目前，还有一些DBMS不能被称为多模型。然而，它们当前的架构可以进行这种扩展，或者这种扩展目前正在开发中。本节中提到的另一组DBMS涉及到对多数据模型的支持非常有限的系统。但在这种情况下，我们也可以假定它可能会（很快）得到扩展。
+
+---
+
+NuoDB. NuoDB41, released under version 1.0 in 2013, is a relational, or more specifically NewSQL DBMS which works in the cloud. As mentioned in [NuoDB 2013] “the NuoDB SQL engine is a personality for the atom layer”, whereas the authors of NuoDB “are actively working on personalities other than the default SQL personality”. Data is stored and managed using self-coordinating objects (atoms) representing data, indices, schemas, etc. Atomicity, consistency and isolation are ensured at the level of atom interaction without the knowledge of their SQL structure. Hence, replacing the SQL front-end would not influence the ACID semantics.
+
+NuoDB。NuoDB41，在2013年1.0版本下发布，是一个关系型，或者更确切的说是NewSQL DBMS，它工作在云端。正如在【NuoDB 2013】中提到的 "的。NuoDB SQL引擎是原子层的个性"，而NuoDB的作者 "正在积极研究除默认SQL个性以外的个性"。数据方面 使用代表数据、索引、模式等的自协调对象（原子）进行存储和管理。原子性、一致性和隔离性在以下层面得到了保证。原子交互，而不知道它们的SQL结构。因此，更换SQL前端不会影响ACID语义。
+
+---
+
+Redis. Redis42 was first released in 2009 as a NoSQL key/value store. However, in the value part it supports not only strings, but also a list of strings, an (un)ordered set of strings, a hash table etc., together with respective operations for storing and retrieval of the data. Although the basic value types cannot be nested, the Redis Modules43 are expected to turn Redis into multi-model database [Curtis 2016]. Redis Modules are add-ons to Redis which extend Redis to cover most of the popular use cases for any industry.
+
+Redis。Redis42最早发布于2009年，是一个NoSQL键/值存储。然而，在2009年，Redis42被发布为NoSQL键/值存储。值部分，它不仅支持字符串，还支持字符串列表，一个（非）有序的 字符串、哈希表等的集合，以及各自的操作，以存储和 数据的检索。虽然基本值类型不能嵌套，但Redis Modules43有望将Redis变成多模型数据库[Curtis 2016]。Redis Modules是Redis的附加组件，它扩展了Redis的功能，覆盖了大多数流行的用例。对于任何行业来说。
+
+---
+
+Aerospike. DBMSs Aerospike44, first released in 2011, is a key/value store with the support for maps and lists in the value part that can nest. In addition, in 2012 Aerospike acquired AlchemyDB, “the first NewSQL database to integrate relational database management system, document store, and graph database capabilities on top of the Redis open-source key/value store” [Aerospike, Inc. 2012].
+
+Aerospike。DBMSs Aerospike44于2011年首次发布，是一个键/值存储，在值部分支持地图和列表，可以嵌套。此外，2012年Aerospike收购了AlchemyDB，"第一个在Redis开源key/value存储之上集成关系型数据库管理系统、文档存储和图形数据库功能的NewSQL数据库"[Aerospike公司，2012]。
+
+---
+
+4.6.4. No More Available. Even in the dynamically evolving world of multi-model databases we can find also systems which are no longer maintained or available. The reasons are different. For example DBMS FoundationDB, supporting key/value, document, and object models, has been in 2015 acquired by Apple [Panzarino 2015] and it is no longer offering downloads. Similarly, Akiban Server which has the ability to treat groups of tables as objects and access them as JSON documents via SQL [The 451 Group 2013] was acquired by FoundationDB [Darrow 2013] in 2013.
+
+4.6.4. 不再有。即使在多模型的动态发展的世界里，也是如此。我们还可以找到不再维护或无法使用的系统。 原因是不同的。例如DBMS FoundationDB，支持键/值、文档和对象模型，已经在2015年被苹果公司收购[Panzarino 2015]，并且 它已经不再提供下载。同样，有能力的Akiban服务器也是如此。将表组视为对象，并通过SQL将其作为JSON文档访问[The 451集团2013]于2013年被FoundationDB[Darrow 2013]收购。
+
+---
+
+## 5 CHALLENGES AND OPEN PROBLEMS
+In this section, we show a compiled list of research challenges and open problems. We classify them into the following four categories: (1) multi-model query processing and optimization, (2) multi-model schema design and optimization, (3) multi-model evolution, and (4) multi-model extensibility.
+
+挑战和未决问题
+在本节中，我们展示了一份研究挑战和未决问题的汇编清单。我们将它们分为以下四类。(1) 多模型查询处理和优化，(2) 多模型模式设计和优化，(3) 多模型演化，(4) 多模型可扩展性。
+
+---
+
+—- Multi-model query processing and optimization. Despite ORDBMSs are capable of storing data with various formats (models), they do not provide a cross-model data processing language, inter-model compilation or respective multi-model query optimization. In contrast, a multi-model database attempts to embrace this challenge by developing a unified query language to accommodate all the supported data models. As mentioned in the previous sections, there exist proposals of multi-model query languages. For example, AQL provided by ArangoDB enables one to access both graph and document data. However, the existing query languages are immature, and it is still an open challenge to develop a full-fledged query language for multi-model data.
+
+多模型查询处理和优化。尽管ORDBMS能够以各种格式(模式)存储数据，但它们并不提供跨模式的查询处理和优化。数据处理语言、模型间编译或各自的多模型查询优化。相比之下，多模型数据库试图通过以下方式迎接这一挑战： 开发一种统一的查询语言来适应所有支持的数据模型。如前几节所述，存在多模型查询语言的建议。例如，ArangoDB提供的AQL使人们能够同时访问图模型和数据模型。和文档数据。然而，现有的查询语言还不成熟，它是 开发一个成熟的多模型数据查询语言仍然是一个开放的挑战。
+
+---
+
+A closely related problem is a proposal of an approach for identification of the optimal query plan for efficient evaluation of a given cross-model query [Lu 2017; Zhang et al. 2018]. Wavelets and histograms enable one to exploit the knowledge of distribution of data and thus optimize query evaluation strategies. However, the current techniques (e.g. [Alway and Nica 2016]) are developed for RDBMSs having a fixed relational schema, whereas multi-model DBMSs support both flexible and diverse schema. Thus, new dynamic techniques should be developed capable of adaptation to schema changes.
+
+与此密切相关的问题是提出了一种识别最优查询方案的方法，以实现对给定跨模型查询的高效评估[Lu 2017；Zhang 等，2018]。小波和直方图使人们能够利用数据的分布知识，从而优化查询评估策略。然而，目前 技术（例如[Alway和Nica 2016]）是为具有固定关系模式的RDBMS开发的，而多模型DBMS则支持灵活多样的模式。因此，应开发能够适应模式的新动态技术 变化。
+
+---
+
+Currently the single-model DBMSs usually build a separate domain-specific index for different domains. Cross-domain queries are then evaluated by (1) separating index searches specifically for the individual domain, and (2) integrating the partial results to find all solutions. In the multi-model world we can use this approach too. For each of the models there exist verified types of indices, such as B-tree and B+-tree for relational data, TreePi [Zhang et al. 2007] and gIndex [Yan et al. 2004] for graph data, or XBtree [Bruno et al. 2002] for hierarchical XML data. However, the efficiency of such approach is questionable. A natural hypothesis is that a universal index comprising various data models should quite probably be a better solution.
+
+目前单一模式的DBMS通常会单独建立一个特定领域的索引 为不同的域。然后通过以下方式评估跨域查询：(1)分离索引 专门针对单个领域的搜索，以及(2)整合部分结果。来寻找所有的解决方案。在多模型的世界里，我们也可以使用这种方法。对于每个 模型中存在着经过验证的指数类型，如关系型的B树和B+树。数据的TreePi[Zhang等人，2007]和gIndex[Yan等人，2004]，或XBtree[Bruno等人，2002]等分层XML数据。然而，这些方法的效率并不高。办法是值得怀疑的。一个自然的假设是，一个普遍的指数包括： 各种数据模型很可能是一个更好的解决方案。
+
+---
+
+In addition, the cloud-based distributed technologies are going forward. Cloud data can be very diverse, including text, streaming data, unstructured and semi-structured data. And cloud users and developers may be in high numbers, but not DBMS experts. Therefore, one challenge is to extend the technology of distributed database management and parallel database programming to fulfill the requirement of the scalability, simplicity and flexibility of the cloud-based multi-model data management.
+
+此外，基于云计算的分布式技术也在不断向前发展。云数据可以非常多样化，包括文本、流媒体数据、非结构化和半结构化数据。而云用户和开发者可能数量很多，但不是DBMS专家。因此，如何扩展分布式数据库管理和并行数据库编程的技术，以满足云端多模型数据管理的可扩展性、简单性和灵活性的要求，是一个挑战。
+
+---
+
+ Multi-model schema design and optimization. A good design of the database schema is a critical part influencing many aspects, such as efficiency of query processing, application extensibility etc. There are critical decisions about both the physical and logical schema of the data. For example, as shown in [Scherzinger et al. 2013] for the case of key/value stores, a naive schema design will result in 20–35% of database transactions failing for a certain workload, whereas this problem can be alleviated through the design of an appropriate schema. A similar paper [Mior 2014] provides a cost-based approach to schema optimization in column stores. Contrary to relational databases, NoSQL databases usually use significantly denormalized physical schema which requires additional space. Hence, in the world of multi-model systems we encounter contradictory requirements for the distinct models and thus it calls for a new solution for multi-model schema design to balance and trade-off the diverse requirement of multi-model data.
+
+ 多模型模式设计与优化。一个好的数据库设计 模式是影响很多方面的关键部分，如查询处理效率、应用扩展性等。在物理上和物理上都有关键的决定。和数据的逻辑模式。例如，如[Scherzinger et al. 2013]中所示，对于? 在键/值存储的情况下，一个天真的模式设计将导致20-35%的数据库。某个工作负载的交易失败，而这个问题可以得到缓解。通过设计一个合适的模式。一篇类似的论文[Mior 2014]提供了一个 基于成本的方法来优化列存储中的模式。与关系型 数据库，NoSQL数据库通常使用显著去正常化的物理模式。这需要额外的空间。因此，在多模型系统的世界里，我们会遇到对不同模型的矛盾要求，因此，它需要一个新的? 多模型模式设计的解决方案，以平衡和权衡多模型数据的多样化需求。
+
+---
+
+ational databases are based on existence of a pre-defined schema, whereas NoSQL databases are based on the assumption of schemalessness. A possible solution may find an inspiration, e.g., in the proposal of the NoSQL AbstractModel (NoAM) [Bugiotti et al. 2014], an abstract data model for NoSQL databases that specifies a systemindependent data representation. However, the proposal covers only aggregateoriented NoSQL databases (i.e., key/value, column, and document).
+
+ational数据库是基于预先定义的模式的存在，而NoSQL数据库是基于无模式的假设。一个可能的解决办法是：
+找到了灵感，例如，在NoSQL抽象模型（NoAM）的提案中[Bugiotti等人，2014]，这是一个NoSQL数据库的抽象数据模型，它规定了一个独立于系统的数据表示。然而，该提案只涵盖了面向聚合的NoSQL数据库（即键/值、列和文档）。
+
+---
+
+A closely related problem of schema inference from a sample set of data instances is another open issue in the multi-model context. There exists a number of approaches dealing with inference of, e.g., JSON [Baazizi et al. 2017] or XML [Mlynkov ´ a and ´ Necasky 2013] schemas. Recently there have appeared approaches inferring a schema ´ for NoSQL document stores [Gallinucci et al. 2018a], or in general for aggregateoriented databases [Sevilla Ruiz et al. 2015; Chillon et al. 2017]. There are even meth- ´ ods which identify aggregation hierarchies in RDF data [Gallinucci et al. 2018b]. However, in the world of multi-model data we need to infer also references between the distinct models. In addition, the inference approaches may benefit from information extracted from related data with distinct models.
+
+与此密切相关的从数据实例样本集推理模式的问题是 在多模型背景下的另一个未决问题。有一些方法 处理诸如JSON[Baazizi等人，2017]或XML[Mlynkov ´ a 和 ´ ]的推理。Necasky 2013]模式。最近，出现了推断模式 的NoSQL文档存储[Gallinucci等人，2018a]，或一般面向聚合的数据库[Sevilla Ruiz等人，2015；Chillon等人，2017]。甚至有meth- ´ ods，它可以识别RDF数据中的聚合层次结构[Gallinucci等人，2018b]。然而，在多模型数据的世界中，我们还需要推断出多模型数据之间的引用。不同的模型。此外，推理方法可能会从信息中受益。从相关数据中提取出具有不同模型的。
+
+---
+
+Multi-model evolution. In general, it is a difficult task to efficiently manage data schema evolution and the propagation of the changes to the relevant portions in a database system, such as data instances, queries, indices, or even storage strategies. In some smaller applications a company can rely on a skilled database administrator to manage the data evolution and to propagate the modification to other impacted parts manually. But in most cases, it is a complicated and error-prone job.
+
+多模型演化。一般来说，有效地管理数据模式的演化以及将修改传播到数据库系统中的相关部分，如数据实例、查询、索引，甚至存储策略，是一项困难的任务。在一些较小的应用中，公司可以依靠熟练的数据库管理员来管理数据的演化，并手动将修改传播到其他受影响的部分。但在大多数情况下，这是一项复杂且容易出错的工作。
+
+---
+
+In the context of multi-model databases, this task is more subtle and difficult. We can distinguish intra-model and inter-model changes. In the former case we can reuse the existing approaches for single models. In the latter case, however, they cannot be straightforwardly applied. The state-of-the-art solutions [Polak et al. 2015], using the classical Model-Driven Architecture, deal with multiple data models which represent distinct and overlapping views of a common model of the considered reality via which a change can be propagated to all affected parts. Then the change propagation can be solved within particular data models separately. In the case of multi-model databases the distinct models cover separate parts of the reality which are interconnected using references, foreign keys, or similar entities. Hence the evolution management has to be solved across all the supported data models. In addition, the challenge of query rewrite [Curino et al. 2008; Manousis et al. 2013], i.e. propagation of changes to queries, also becomes more complex in case of inter-model changes which require changes in data access constructs.
+
+在多模型数据库的情况下，这个任务更加微妙和困难。我们 可以区分模型内和模型间的变化。在前一种情况下，我们可以重复使用现有的方法来处理单个模型。然而，在后一种情况下，它们不能 被直接应用。最先进的解决方案[Polak等人，2015]，采用了 经典的模型驱动架构，处理多个数据模型，这些模型代表了所考虑的现实的共同模型的不同和重叠的视图，通过 变化可以传播到所有受影响的部分。那么变化传播 可以在特定的数据模型内分别求解。在多模型的情况下 数据库中不同的模型涵盖了现实中不同的部分，这些部分通过引用、外键或类似的实体相互连接。因此，必须解决所有支持的数据模型的演化管理问题。此外，还有一个挑战 的查询重写[Curino等人，2008；Manousis等人，2013]，即传播变化。到查询，在模型间变化的情况下也会变得更加复杂，这需要 数据访问结构的变化。
+
+---
+
+Multi-model extensibility. The last but not least open problem is the challenge of model extensibility, which can be considered in several scopes. First, we may consider intra-model extensibility which means extending one of the models with new constructs, e.g., extending the XML model with the support for the query on IDs and IDREF(S). Second, we may consider inter-model extensibility which adds new constructs expressing relations between the models, e.g. the ability to express a CHECK constraint from the relational model across both relational and XML data. And third, we can provide extra-model extensibility which involves adding a whole new model, together with respective data and query, e.g. adding time series data with the support of time series analysis.
+
+多模型的可扩展性。最后但并非最不重要的开放性问题是挑战。模型的可扩展性，可以在几个范围内考虑。首先，我们可以考虑模型内部的可扩展性，这意味着用新的模型来扩展其中一个模型。构造，例如，扩展XML模型，支持对IDs的查询和 IDREF(S)。其次，我们可以考虑模型间的可扩展性，增加新的构造来表达模型间的关系，例如可以表达一个CHECK 来自关系模型的约束，跨越关系数据和XML数据。而第三。我们可以提供模型外的可扩展性，包括添加一个全新的模型。以及相应的数据和查询，例如，添加时间序列数据的支持。的时间序列分析。
+
+---
+
+CONCLUSION
+The specific V-characteristics of Big Data bring many challenging tasks to be solved to provide efficient and effective management of the data. In this survey we focus on the variety challenge of Big Data which requires concurrent storage and management of distinct data types and formats. Multi-model DBMSs analyzed in this survey correspond to the “one size fits a bunch” viewpoint [Alsubaiee et al. 2014]. Considering the Gartner survey [Feinberg et al. 2015] which shows the high near-future representation and the existing large amount of multi-model systems, this approach has demonstrated its meaningfulness and practical applicability. On the other hand, this survey also shows that there still remains a long journey towards a mature and robust multi-model DBMS comparable with verified solutions from the world of relational databases. One intention of this survey is to promote research and industrial efforts to catch the opportunities and address challenges in developing a full-fledged multimodel database system.
+
+结论
+大数据特有的V型特征，为提供高效的数据管理带来了许多具有挑战性的任务需要解决。在本次调查中，我们将重点关注大数据的各种挑战，它需要同时进行存储和管理。的不同数据类型和格式。本次调查中分析的多模型DBMS符合 "一刀切 "的观点[Alsubaiee et al. 2014]。考虑到 Gartner的调查[Feinberg等，2015]显示了近未来的高代表性和现有的大量多模型系统，这种方法具有证明了它的意义和实际适用性。另一方面，这 调查还显示，走向成熟和稳健仍有很长的路要走。多模型DBMS可与关系型数据库世界的验证解决方案相媲美。数据库。本次调查的目的之一是促进研究和工业界的努力。以抓住机遇，应对开发成熟的多模型数据库系统的挑战。
