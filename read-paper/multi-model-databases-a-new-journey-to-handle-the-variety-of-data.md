@@ -4,7 +4,7 @@
 
 The variety of data is one of the most challenging issues for the research and practice in data management systems. The data are naturally organized in different formats and models, including structured data, semi structured data and unstructured data. In this survey, we introduce the area of multi-model DBMSs which build a single database platform to manage multi-model data. Even though multi-model databases are a newly emerging area, in recent years we have witnessed many database systems to embrace this category. We provide a general classifification and multi-dimensional comparisons for the most popular multi-model databases. This comprehensive introduction on existing approaches and open problems, from the technique and application perspective, make this survey useful for motivating new multi-model database approaches, as well as serving as a technical reference for developing multi-model database applications.
 
-数据的多样性是数据管理研究和实践中最具挑战性的问题之一。系统。数据自然以不同的格式和模型组织起来，包括结构化数据、半结构化数据和非结构化数据。在本次调查中，我们介绍了多模型DBMS的领域，它的特点是 构建一个单一的数据库平台来管理多模型数据。尽管多模型数据库是一个很好的平台，但它是一个很好的平台。新兴的领域，近年来，我们见证了许多数据库系统来拥抱这个范畴。我们为最流行的多模型提供了一个通用的分类和多维度的比较。数据库。本次全面介绍了现有的方法和开放的问题，从技术上讲 和应用的角度，使得这项调查对激励新的多模型数据库方法很有帮助。以及作为开发多模型数据库应用的技术参考。
+数据的多样性是数据管理系统研究和实践中最具挑战性的问题之一。数据自然以不同的格式和模型组织起来，包括结构化数据、半结构化数据和非结构化数据。在本次调查中，我们介绍了多模型DBMS的领域，它的特点是 构建一个单一的数据库平台来管理多模型数据。尽管多模型数据库是一个新兴的领域，近年来，我们见证了许多数据库系统来拥抱这个范畴。我们为最流行的多模型数据库提供了一个通用的分类和多维度的比较。本次全面介绍了现有的方法和开放的问题，从技术上讲 和应用的角度，使得这项调查对激励新的多模型数据库方法很有帮助。以及作为开发多模型数据库应用的技术参考。
 
 ---
 
@@ -389,7 +389,7 @@ This is given by several reasons:
 
 PostgreSQL. The development of PostgreSQL8 began in the mid-1980s aiming at a classical relational DBMS. The recent versions, however, bring many NoSQL features (like, e.g., materialized views enabling data duplicities for faster query evaluation or synchronous and asynchronous master-slave replication). There also exists a number of vendors of facilities to make it easy to set up, operate and scale PostgreSQL deployments in the cloud.
 
-PostgreSQL。PostgreSQL8的开发始于20世纪80年代中期，目标是一个经典的关系型DBMS。然而，最近的版本带来了许多NoSQL的特性（例如，物化视图可以实现数据重复以加快查询评估或同步和异步主从复制）。此外，还存在一些供应商的设施，使其能够轻松地设置、操作和扩展PostgreSQL在云中的部署。
+
 
 ---
 
@@ -717,12 +717,6 @@ Couchbase中支持两种类型的索引--类似于关系型数据库中使用的
 
 ---
 
-Two types of indices are supported in Couchbase – B+tree indices similar to those used in relational databases and B+trie (a hierarchical B+-tree based trie). B+trie provides a more efficient tree structure compared to B+trees and ensures a shallower tree hierarchy.
-
-Couchbase中支持两种类型的索引--类似于关系型数据库中使用的B+树索引和B+trie（一种基于B+树的层次结构的Trie）。与B+树相比，B+trie提供了更有效的树结构，并保证了较浅的树层结构。
-
----
-
 MongoDB. Probably the most popular document DBMS MongoDB31 (whose development began in 2007) has been declared as multi-model at the end of 2016. Its document model, that can naturally store also simple key/value pairs and table-like structures, has been extended towards graph data. In addition, MongoDB Atlas is a cloud-hosted database service.
 
 MongoDB。可能是最流行的文档DBMS MongoDB31（其开发始于2007年）已于2016年底被宣布为多模型。它的文档模型，自然也可以存储简单的键/值对和类表结构，已经向图数据扩展。此外，MongoDB Atlas是一个云端托管的数据库服务。
@@ -766,7 +760,9 @@ By default, Cosmos DB automatically indexes all documents in the database and it
 
 ---
 
-4.4.1. XML Stores. XML stores can be considered as a special type of document databases. However, XML stores do not belong to the group of core NoSQL databases, so they are usually not intended for Big Data and respective distributed processing.
+4.4.1. XML Stores. 
+
+XML stores can be considered as a special type of document databases. However, XML stores do not belong to the group of core NoSQL databases, so they are usually not intended for Big Data and respective distributed processing.
 
 4.4.1. XML存储。XML存储可以被认为是一种特殊类型的文档数据库，但XML存储并不属于NoSQL数据库的核心组别，所以通常不用于大数据和各自的分布式处理。但是，XML存储不属于核心NoSQL数据库的范畴，所以通常不用于大数据和各自的分布式处理。
 
