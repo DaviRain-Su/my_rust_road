@@ -44,3 +44,64 @@ let child  = thread::spawn( move || {
 let res = child.join();
 ```
 
+如果我们需要为子线程指定更多的参数信息，那么在创建的时候可以使用Builder模式
+
+```rust
+use std::thread;
+
+thread::Builder::new().name("child".to_string()).spawn(move || {
+  println!("Hello, world!");
+});
+```
+
+
+
+- Thread::sleep(dur: Duration)
+  - 使得当前线程等待一段时间继续执行。在等待的时间内，线程调度器会调度其他的线程执行、
+- thread::yield_now()
+  - 放弃当前线程的执行，要求线程调度器执行线程切换
+- Thread::current()
+  - 获得当前的线程
+- Thread::park() 
+  - 暂停当前线程，进入等待状态，当thread::thread::unpark(&self)方法被调用的时候，这个线程可以被恢复执行。
+- thread::Thread::unpark(&self)
+  - 恢复一个线程的执行
+
+```rust
+use std::thread;
+use std::time::Dration;
+
+let t = thread::Builder::new()
+  .name("child2".to_string())
+  .spawn(move || {
+    println!("enter child thread.");
+    thread::park();
+    println!("resume child thread.");
+  })
+  .unwrap();
+println!("spawn a thread");
+thread::sleep(Duration::new(5, 0));
+t.thread().unpark();
+let _ = t.join();
+println!("child thread finished");
+```
+
+## 免数据竞争
+
+我们在闭包里面引用了函数体的局部变量，而这个闭包是运行在另一线程上，编译器无法肯定局部变量health的生命周期一定大于闭包的生命周期，于是发生了错误。
+
+我们没有办法在多线程中直接读写普通的共享变量，除非使用Rust提供的线程安全相关的设施、
+
+Data race 即数据竞争，意识是在多线程程序中，不同线程在没有使用同步的条件下并行访问同一块数据，且其中至少有一个是写操作的情况。
+
+根据数据竞争的定义，它的发生需要三个条件：
+
+- 数据共享，有多个线程同时访问一份数据
+- 数据修改， 至少存在一个线程对数据做修改
+- 没有同步，至少存在一个线程对数据的访问没有使用同步措施
+
+只要让这三个条件无法同时发生即可：
+
+- 可以禁止数据共享，比如actor-based concurrency , 多线程之间的通信紧靠发送消息来实现，而不是通过共享数据来实现。
+- 可以禁止数据修改，比如function programming ，许多函数式编程语言严格限制了数据的可变性，而对共享性没有限制。
+
