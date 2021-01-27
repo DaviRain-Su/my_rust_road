@@ -26,8 +26,8 @@ impl Editor {
         }
     }
 
-    pub fn default() -> Self {
-        Editor{}
+    #[must_use] pub fn default() -> Self {
+        Self {}
     }
 }
 fn die(e: std::io::Error) {

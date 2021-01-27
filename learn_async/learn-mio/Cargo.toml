@@ -1,0 +1,12 @@
+[package]
+name = "learn-mio"
+version = "0.1.0"
+authors = ["DaviRain-Su <davirain.yin@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mio = { version = "0.7", features = ["os-poll", "net"] }
+log = "0.4.8"
+env_logger = { version = "0.8.2", default-features = false }
