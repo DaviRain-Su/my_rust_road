@@ -1,58 +1,53 @@
-# 引言
+# Rust Design Pattern 
 
-# 惯用语
+## [Introduction](./introduction.md)
 
-## 使用格式连接字符串
+## [Idioms](./idoms/idoms.md)
 
-## 构造函数
+- [Use borrowed types for arguments](./idoms/use-borrowed-types-for-arguments.md)
+- [Concattenating String with format!](./idoms/concatenating-string-with-format.md)
+- [Constructor](./idoms/constructor.md)
+- [The Default Trait](./idoms/default-trait.md)
+- [Collections Are Smart Pointers](./idoms/collections-are-smart-pointers.md)
+- [Finalisaztion in Destructors](./idoms/finalisation-in-destructors.md)
+- [Mem::{take(), replace()}](./idoms/mem-replace.md)
+- [On-Stack Dynamic Dispatch](./idoms/on-stack-dynamic-dispatch.md)
+- [Foreign function interface usage ](./idoms/ffi-idioms.md)
+  - [Idiomatic Errors](./idoms/error-handling-in-ffi.md)
+  - [Accepting Strings](./idoms/ffi-accept-string.md)
+  - [Passing Strins](./idoms/ffi-passing-strings.md)
+- Iterating over an Option
+- Pass Variables to Closure
+- Privacy For Extensibility
+- Easy doc Intialization
+- Temporary mutability
 
-## 默认Trait
+## Design Patters
 
-## 集合是聪明的指针
+- [Builder](./design-patterns/builder.md)
+- Compose Structs
+- Entry API
+- Foreign function interface usage
+  - Object-Based APIs
+  - Type Consolidation into Wrappers
+- Fold
+- Newtype
+- RAII Guards
+- Prefer Small Crates
+- Strategy 
+- Contain unsafety in small module 
+- Vistor
 
-## 在析构函数中Finalisation
+## Anti-patterns
 
-## mem::replace()
+- #[deny(warnings)]
+- Deref Polymorphism
 
-## On-Stack Dynamic Dispatch
+## Functional Programming 
 
-## 迭代器是一个选项
+- Programming paradigms
 
-## 将变量传递给闭包
+## Additional Resources
 
-## 可扩展性的隐私
-
-## 简单的文档初始化
-
-## 暂时的易变性
-
-# 设计模式
-
-## Builder
-
-## Compose Structs
-
-## Fold
-
-## NewType
-
-## RAII Guards
-
-## 更喜欢small crates
-
-## 在小模块中包含不安全因素
-
-## Vistor
-
-# 反模式
-
-## #[deny(warnings)]
-
-## Deref Polymorphism
-
-# 函数式编程
-
-# 额外资源
-
-
+- Design principles
 

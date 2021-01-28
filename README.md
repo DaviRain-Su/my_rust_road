@@ -1,43 +1,65 @@
-# my_rust_road
+# My Rust Road
 
-my study Rust example code
+> 这里是我学习Rust后的一些留存
 
-# 第二章 语言精要 
+## Rust 学习笔记📒
 
-## 2.2 语句与表达式
+[rust 编程之道学习笔记](./rust-tourtial-note/the-tao-rust-road.md)
 
-Rust中的语法可以分为两大类：语句(Statement)和表达式(Expression). 
-语句是指要执行的一些操作和产生副作用的表达式。
-表达式主要用于计算求值。
+[rust之全局变量](./rust-tourtial-note/global-val.md)
 
-语句又分两种：声明语句(Declaration statement)和表达式语句(Expression statement). 
+[rust 通用概念](./rust-tourtial-note/rust_common_concept.md)
 
-- 声明语句， 用于声明各种语言项(Item)，包括声明变量、静态变量、常量、结构体、函数等，以及通过extern和use关键字引入包和模块等
-- 表达式语句，特值以分号结尾的表达式，此表达式求值结果将会被丢弃，并总是返回单元类型(). 
+[线程安全](./rust-tourtial-note/thread-safe.md)
+
+[Rust 编程之道思维导图](./rust-tourtial-note/note/tao_rust_road.md)
+
+[Exploring lock free rust 1 locks](./rust-tourtial-note/exploring-lock-free-rust-1-locks.md)
 
 
-https://play.rust-lang.org/?version=nightly&mode=debug&edition=2018&gist=726c1c5af9a8ca4b93b482945b5d44ce
 
-## 2.3 变量与绑定
+## Git 学习笔记📒
 
-通过let关键字来创建变量，这是Rust语言从函数式语言中借鉴的语法形式。let创建的变量一般称为绑定(Binding), 它表明了标识符(Identifier）和值(Value)之间建立的一种关联关系。
+[Git Fork and Upstreams ](./learn-git/git-forks-and-upstreams.md)
 
-# 第9章 构建健壮的程序
 
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=f0b4b4c8a9fe2be77739237378ea626f
 
-# 第5章 所有权 
+## Too many list in Rust📒
 
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=25a43657beb962e51b763325ed5a6808
+[A bad but safe doubly linked deque](./rust-tourtial-note/too-many-list-in-rust/a_bad_but_safe_doubly_linked_deque.md)
 
-# 第6 章 函数、闭包与迭代器
+[A bad singly linked stack](./rust-tourtial-note/too-many-list-in-rust/a_bad_singly_linked_stack.md)
 
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=e19a6b47cd3cc38dc15843c73fbb748b
+[A persistent singly linked stack](./rust-tourtial-note/too-many-list-in-rust/a_persistent_singly_linked_stack.md)
 
-# 并发
+[A unsafe singly linked deque](./rust-tourtial-note/too-many-list-in-rust/a_unsafe_singly_linked_deque.md)
 
-https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d161cbe081b39d10168afa36f8cd890c
+[An ok singly linked stack](./rust-tourtial-note/too-many-list-in-rust/an_ok_singly_linked_stack.md)
 
-# 第十三章 超越安全边界
+[The double singly linked list](./rust-tourtial-note/too-many-list-in-rust/the_double_singly_linked_list.md)
 
-https://play.rust-lang.org/?version=nightly&mode=debug&edition=2018&gist=9bfaf731313015216909f4402d431acc
+[Summary](./rust-tourtial-note/too-many-list-in-rust/Summary.md)
+
+
+
+## 设计模式
+
+[Chapter1](./design-pattern/ch1.md)
+
+
+
+## 自制搜索引擎🔍
+
+[Introduction](./mini-search/note.md)
+
+
+
+## Rust 刷算法题
+
+[Rust 刷题笔记](./rust-algorithm/README.md)
+
+
+
+## (翻译)rust设计模式
+
+[翻译的Rust设计模式](./rust-design-patterns/README.md)
