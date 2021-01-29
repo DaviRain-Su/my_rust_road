@@ -14,12 +14,5 @@ pub async fn main() -> Result<()> {
 
     println!("got value from the server, result = {:?}", result);
 
-    say_hello().await;
-    
     Ok(())
-}
-
-
-async fn say_hello() {
-    println!("hello world");
 }

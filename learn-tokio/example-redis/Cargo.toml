@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 tokio = {version = "1", features = ["full"]}
 mini-redis = "0.4"
+log = "0.4.14"
+env_logger = "0.8.2"
