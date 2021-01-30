@@ -7,11 +7,11 @@ pub async fn main() -> Result<()> {
     let mut client = client::connect("127.0.0.1:9000").await?;
 
     // let t1 = tokio::spawn(async {
-        // let _res = client.get("hello").await;
+    // let _res = client.get("hello").await;
     // });
 
     // let t2 = tokio::spawn(async {
-        // client.set("foo", "bar".into()).await;
+    // client.set("foo", "bar".into()).await;
     // });
 
     // set the "hello" with value "world"
@@ -22,7 +22,5 @@ pub async fn main() -> Result<()> {
 
     println!("got value from the server, result = {:?}", result);
 
-    // t1.await.unwrap();
-    // t2.await.unwrap();
     Ok(())
 }
