@@ -14,7 +14,7 @@ type Db = Arc<Mutex<HashMap<String, Bytes>>>;
 async fn main() -> Result<()> {
     env_logger::init();
 
-    let listener = TcpListener::bind("127.0.0.1:9000").await?;
+    let listener = TcpListener::bind("127.0.0.1:6379").await?;
 
     println!("🎈Listening!");
 
