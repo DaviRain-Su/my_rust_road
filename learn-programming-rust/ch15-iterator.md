@@ -1,0 +1,38 @@
+# Chapter15 迭代器
+- Iterator与IntoIterator Trait
+- 创建迭代器    
+    - iter和iter_mut方法
+    - IntoIterator实现
+    - drain方法
+    - 其他迭代器源
+- 迭代器适配器
+    - map和filter
+    - filter_map和flat_map
+    - scan
+    - take和take_while
+    - skip和skip_while
+    - peekable
+    - 可逆迭代器与rev
+    - inspect
+    - chain
+    - enumerate
+    - zip
+    - by_ref
+    - cloned
+    - cycle
+- 消费迭代器
+    - 简单累计：count, sum, 和product
+    - max和min
+    - max_by和min_by
+    - max_by_key和min_by_key
+    - 比较项序列
+    - any和all
+    - position, rposition, ExactSizedInterator
+    - fold
+    - nth
+    - last
+    - find
+    - 构建集合: Collect和FromIterator
+    - Extend trait
+    - partition
+- 实现自己的迭代器

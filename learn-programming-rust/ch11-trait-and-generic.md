@@ -1,0 +1,19 @@
+# Chapter11 trait与泛型
+- 使用trait
+    - trait目标
+    - triat目标布局
+    - 泛型函数
+    - 使用哪一个
+- 定义和实现trait
+    - 默认方法
+    - trait与其他人的类型
+    - triat中的Self
+    - 子trait
+    - 静态方法
+- 完全限定方法调用
+- 定义类型关系的trait
+    - 关联类型（或迭代器工作原理）
+    - 泛型triat（或操作符重载原理）
+    - 伴型特性（或rand::random()工作原理)
+- 逆向工程绑定
+- 小结
