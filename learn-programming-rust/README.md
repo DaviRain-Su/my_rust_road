@@ -113,11 +113,11 @@
 - [Chapter16 集合](./ch16-collections.md)
     - 概述
     - Vec`<T>`
-    - VecDeque
-    - LinkedList
-    - BinaryHeap
-    - HashMap和BTreeMap
-    - HashSet和BTreeSet
+    - VecDeque`<T>`
+    - LinkedList`<T>`
+    - BinaryHeap`<T>`
+    - HashMap`<T>`和BTreeMap`<T>`
+    - HashSet`<T>`和BTreeSet`<T>`
     - 散列
     - 标准集合之外的
 - [Chapter17 字符串与文本](./ch17-string-text.md)
