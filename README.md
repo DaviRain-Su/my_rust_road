@@ -63,3 +63,8 @@
 ## (翻译)rust设计模式
 
 [翻译的Rust设计模式](./rust-design-patterns/README.md)
+
+
+
+## 张汉东老师的Rust实战课
+[Rust实战课](./pratice-rust/README.md)

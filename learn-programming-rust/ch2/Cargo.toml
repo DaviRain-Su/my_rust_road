@@ -13,3 +13,8 @@ edition = "2018"
 name = "gcd"
 test = true
 bench = false
+
+[[bin]]
+name = "overflower"
+test = true
+bech = false
