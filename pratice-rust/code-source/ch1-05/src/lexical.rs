@@ -212,9 +212,9 @@ pub fn macro_show() {
 
     ```rust
 
-    // 模块路径
+    // 使用方法1: 模块路径
     mod a {
-        fn foo() {}
+        fn foo() {println!("a");}
 
         mod b {
             mod c {
