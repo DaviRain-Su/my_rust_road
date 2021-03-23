@@ -5,7 +5,8 @@
 pub fn gcd(mut n: u64, mut m: u64) -> u64 {
     // Rust只在函数体内推断变量类型，函数参数和返回值则必须明确写出类型。
     assert!(n != 0 && m != 0);
-    while m != 0 { // Rust不需要用圆括号括住条件表达式，但需要花括号括住条件满足后要执行的语句
+    while m != 0 {
+        // Rust不需要用圆括号括住条件表达式，但需要花括号括住条件满足后要执行的语句
         if m < n {
             let t = m;
             m = n;
@@ -19,10 +20,9 @@ pub fn gcd(mut n: u64, mut m: u64) -> u64 {
     n
 }
 
-
 #[test]
 fn test_gcd() {
-    assert_eq!(gcd(14, 15),1);
+    assert_eq!(gcd(14, 15), 1);
 
-    assert_eq!(gcd(2 * 3 * 5 * 11 * 17 , 3 * 7 * 11 * 13 * 19), 3 * 11);
+    assert_eq!(gcd(2 * 3 * 5 * 11 * 17, 3 * 7 * 11 * 13 * 19), 3 * 11);
 }
