@@ -1,12 +1,10 @@
 [package]
-name = "cli"
+name = "substrate"
 version = "0.1.0"
-authors = ["Davirain-Su <davirain.yin@gmail.com>"]
+authors = ["DaviRain-Su <davirain.yin@gamil.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "2.33.3"
-env_logger = "0.8.2"
-log = "0.4.14"
+dogedoge-cli = {version = "0.1.0", path = "../cli"}

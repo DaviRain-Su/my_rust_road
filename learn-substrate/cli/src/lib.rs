@@ -1,8 +1,3 @@
-
-extern crate clap;
-extern crate env_logger;
-extern crate log;
-
 use clap::{Arg, App, SubCommand};
 
 pub fn main() {
@@ -45,5 +40,6 @@ fn init_logger(pattern: &str) {
 	builder.parse_filters(pattern);
 
 
+	// builder.init().expect("Logger initialized only once.");
 	builder.init();
 }
