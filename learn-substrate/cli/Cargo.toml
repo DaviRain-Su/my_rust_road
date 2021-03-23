@@ -7,6 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "2.27"
+clap = {version = "2.27", features = ["yaml"]}
 env_logger = "0.8.3"
 log = "0.4.14"

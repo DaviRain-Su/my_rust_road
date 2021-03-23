@@ -1,0 +1,15 @@
+name: substrate-node
+version: "1.0.0"
+author: "Davirain"
+about: Cli Rust implementation
+args:
+  - log:
+      short: l
+      value_name: LOG_PATTERN
+      help: Sets a custom logging
+      takes_value: true
+subcommands:
+  - collator:
+      about: Run collator node
+  - validator:
+      about: Run validator node
