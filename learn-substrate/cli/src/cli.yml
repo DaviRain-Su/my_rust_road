@@ -1,4 +1,4 @@
-name: substrate-node
+name: substrate-cli
 version: "1.0.0"
 author: "Davirain"
 about: Cli Rust implementation

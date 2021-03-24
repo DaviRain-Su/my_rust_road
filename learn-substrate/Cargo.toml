@@ -2,4 +2,5 @@
 members = [
     "cli",
     "node", # bin target
+    "primitives",
 ]

@@ -1,4 +1,4 @@
-use dogedoge_cli;
+use substrate_cli;
 fn main() {
-    dogedoge_cli::main();
+    substrate_cli::main();
 }

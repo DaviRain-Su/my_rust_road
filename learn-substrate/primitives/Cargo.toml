@@ -1,5 +1,5 @@
 [package]
-name = "substrate-cli"
+name = "substrate-primitives"
 version = "0.1.0"
 authors = ["DaviRain-Su <davirain.yin@gamil.com>"]
 edition = "2018"
@@ -7,6 +7,3 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = {version = "2.27", features = ["yaml"]}
-env_logger = "0.8.3"
-log = "0.4.14"
