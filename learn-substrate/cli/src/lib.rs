@@ -1,4 +1,5 @@
 //! substrate Cli library
+//! substrate 命令行解析库
 
 #![warn(missing_docs)]
 

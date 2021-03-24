@@ -1,6 +1,6 @@
 [workspace] 
 members = [
-    "cli",
-    "node", # bin target
-    "primitives",
+    "cli", # 命令行解析库
+    "node", # 主程序二进制文件
+    "primitives", # substrate类型文件
 ]
