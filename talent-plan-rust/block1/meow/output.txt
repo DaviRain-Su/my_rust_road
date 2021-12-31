@@ -1,1 +1,0 @@
-["target/debug/meow", "1", "2", "3"]
